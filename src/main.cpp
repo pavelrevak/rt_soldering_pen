@@ -494,16 +494,16 @@ class MainClass {
         cpu_voltage_idle += Board::adc.get_cpu_voltage();
         supply_voltage_idle += Board::adc.get_supply_voltage();
         cpu_temperature += Board::adc.get_cpu_temperature();
-        if (Board::adc.is_pen_connected()) {
-            if (temp_sensor_status == TempSensorStatus::UNKNOWN) {
-                temp_sensor_status = TempSensorStatus::OK;
-            }
-            pen_temperature += Board::adc.get_pen_temperature();
-        } else {
+        if (Board::adc.is_pen_broken()) {
             if (temp_sensor_status != TempSensorStatus::BROKEN) {
                 set_standby();
             }
             temp_sensor_status = TempSensorStatus::BROKEN;
+        } else {
+            if (temp_sensor_status == TempSensorStatus::UNKNOWN) {
+                temp_sensor_status = TempSensorStatus::OK;
+            }
+            pen_temperature += Board::adc.get_pen_temperature();
         }
         // measurements counter
         idle_measurements_count++;
