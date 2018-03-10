@@ -1,6 +1,5 @@
 #include <string.h>
 
-#include "io/reg/stm32/f0/sysmem.hpp"
 #include "board/clock.hpp"
 #include "board/systick.hpp"
 #include "board/debug.hpp"
@@ -12,6 +11,7 @@
 #include "lib/str.hpp"
 #include "lib/font.hpp"
 #include "lib/pid.hpp"
+#include "lib/button.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
@@ -122,84 +122,14 @@ class MainClass {
         change_state(PeriodState::BUTTONS_PROCESS);
     }
 
-    class Button {
-        static const int LONG_DOWN_CYCLES = 6;
-        static const int LONG_REPEAT_CYCLES = 7;
-        static const int REPEAT_CYCLES = 1;
-        int press_cycles = 0;
-        unsigned pressed = 0;
-        unsigned released = 0;
-        bool down = false;
-        bool others = false;
-
-    public:
-        enum class Action {
-            NONE,
-            PRESSED,
-            RELEASED_SHORT,
-            PRESSED_LONG,
-            REPEAT,
-            RELEASED_LONG,
-        };
-
-        void process_fast(bool is_pressed, bool other_pressed) {
-            if ((is_pressed && others) || other_pressed) {
-                down = false;
-                others = true;
-                pressed = 0;
-                released = 0;
-                return;
-            } else {
-                others = false;
-            }
-            if (down == is_pressed) {
-                return;
-            }
-            down = is_pressed;
-            if (is_pressed) {
-                press_cycles = 0;
-                pressed++;
-            } else {
-                released++;
-                down = 0;
-            }
-        }
-
-        Action process() {
-            if (down) {
-                press_cycles++;
-                if (press_cycles == LONG_DOWN_CYCLES) {
-                    return Action::PRESSED_LONG;
-                }
-            }
-            if (pressed) {
-                pressed--;
-                return Action::PRESSED;
-            }
-            if (released) {
-                released--;
-                if (press_cycles >= LONG_DOWN_CYCLES) {
-                    return Action::RELEASED_LONG;
-                } else {
-                    return Action::RELEASED_SHORT;
-                }
-            }
-            if (down && (press_cycles >= (LONG_REPEAT_CYCLES))) {
-                press_cycles -= REPEAT_CYCLES;
-                return Action::REPEAT;
-            }
-            return Action::NONE;
-        }
-    };
-
     static const unsigned BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;
     unsigned buttons_sample_ticks = 0;
     Button button_up;
     Button button_dw;
     Button button_both;
 
-    void buttons_process_fast(unsigned delta) {
-        buttons_sample_ticks += delta;
+    void buttons_process_fast(unsigned delta_ticks) {
+        buttons_sample_ticks += delta_ticks;
         if (buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
         buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
         button_up.process_fast(Board::buttons.is_pressed_up(), Board::buttons.is_pressed_down());
@@ -504,34 +434,15 @@ class MainClass {
         change_state(PeriodState::HEATING_PROCESS);
     }
 
-    void heating_process(unsigned delta) {
-        heat_ticks += delta;
-        measure_cycle_heat_ticks += delta;
+    void heating_process(unsigned delta_ticks) {
+        heat_ticks += delta_ticks;
+        measure_cycle_heat_ticks += delta_ticks;
         if (!Board::adc.measure_is_done()) return;
-        // calculate CPU voltage
-        int actual_cpu_voltage = (io::SYSMEM.VREFINT_CAL << 4) * 3300;
-        actual_cpu_voltage /= Board::adc.get_measured(Board::Adc::INDEX_HEAT_CPU_REFERENCE);
-        cpu_voltage_heat += actual_cpu_voltage;
-        // calculate supply voltage
-        int actual_supply_voltage = Board::adc.get_measured(Board::Adc::INDEX_HEAT_SUPPLY_VOLTAGE);
-        actual_supply_voltage *= actual_cpu_voltage;
-        actual_supply_voltage /= Board::Adc::MAX_VALUE;
-        actual_supply_voltage *= 68 + 10;  // divider with 68 and 10 kOhm
-        actual_supply_voltage /= 10;
-        supply_voltage_heat += actual_supply_voltage;
-        // calculate pen current
-        int actual_pen_current = Board::adc.get_measured(Board::Adc::INDEX_HEAT_PEN_CURRENT);
-        actual_pen_current -= Board::Adc::MAX_VALUE / 2;
-        actual_pen_current *= actual_cpu_voltage;
-        actual_pen_current /= Board::Adc::MAX_VALUE;
-        actual_pen_current *= 1000;  // mA
-        actual_pen_current /= 110;  // 110 mV / A
-        if (actual_pen_current < 0) actual_pen_current = -actual_pen_current;
-        pen_current += actual_pen_current;
-        // measurements counter
+        cpu_voltage_heat += Board::adc.get_cpu_voltage();
+        supply_voltage_heat += Board::adc.get_supply_voltage();
+        pen_current += Board::adc.get_pen_current();
         heat_measurements_count++;
-        // calculate cumulated power
-        cumulated_power += (int64_t)actual_supply_voltage * actual_pen_current * measure_cycle_heat_ticks;
+        cumulated_power += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * measure_cycle_heat_ticks;
         measure_cycle_heat_ticks = 0;
         if ((cumulated_power >= heating_power) || (period_ticks >= PERIOD_HEATING_TICKS)) {
             total_power += cumulated_power;
@@ -555,8 +466,8 @@ class MainClass {
         change_state(PeriodState::STABILIZE_PROCESS);
     }
 
-    void stabilize_process(unsigned delta) {
-        stabilize_ticks += delta;
+    void stabilize_process(unsigned delta_ticks) {
+        stabilize_ticks += delta_ticks;
         if (stabilize_ticks < STABILIZE_TICKS) return;
         change_state(PeriodState::STABILIZE_END);
     }
@@ -577,44 +488,23 @@ class MainClass {
         change_state(PeriodState::IDLE_PROCESS);
     }
 
-    void idle_process(unsigned delta) {
-        idle_ticks += delta;
+    void idle_process(unsigned delta_ticks) {
+        idle_ticks += delta_ticks;
         if (!Board::adc.measure_is_done()) return;
-        // calculate CPU voltage
-        int actual_cpu_voltage = (io::SYSMEM.VREFINT_CAL << 4) * 3300;
-        actual_cpu_voltage /= Board::adc.get_measured(Board::Adc::INDEX_IDLE_CPU_REFERENCE);
-        cpu_voltage_idle += actual_cpu_voltage;
-        // calculate supply voltage
-        int actual_supply_voltage = Board::adc.get_measured(Board::Adc::INDEX_IDLE_SUPPLY_VOLTAGE);
-        actual_supply_voltage *= actual_cpu_voltage;
-        actual_supply_voltage /= Board::Adc::MAX_VALUE;
-        actual_supply_voltage *= 68 + 10;  // divider with 68 and 10 kOhm
-        actual_supply_voltage /= 10;
-        supply_voltage_idle += actual_supply_voltage;
-        // calculate CPU temperature
-        int actual_cpu_temperature = Board::adc.get_measured(Board::Adc::INDEX_IDLE_CPU_TEMPERATURE);
-        actual_cpu_temperature *= actual_cpu_voltage;
-        actual_cpu_temperature /= 3300;
-        actual_cpu_temperature -= (io::SYSMEM.TEMP30_CAL << 4);
-        actual_cpu_temperature *= 110 * 1000 - 30 * 1000;
-        actual_cpu_temperature /= (io::SYSMEM.TEMP110_CAL << 4) - (io::SYSMEM.TEMP30_CAL << 4);
-        actual_cpu_temperature += 30 * 1000;
-        cpu_temperature += actual_cpu_temperature;
-        // calculate PEN temperature
-        int actual_pen_temperature = Board::adc.get_measured(Board::Adc::INDEX_IDLE_PEN_TEMPERATURE);
-        if (actual_pen_temperature > 65000) {
+        cpu_voltage_idle += Board::adc.get_cpu_voltage();
+        supply_voltage_idle += Board::adc.get_supply_voltage();
+        cpu_temperature += Board::adc.get_cpu_temperature();
+        if (Board::adc.is_pen_connected()) {
+            if (temp_sensor_status == TempSensorStatus::UNKNOWN) {
+                temp_sensor_status = TempSensorStatus::OK;
+            }
+            pen_temperature += Board::adc.get_pen_temperature();
+        } else {
             if (temp_sensor_status != TempSensorStatus::BROKEN) {
                 set_standby();
             }
             temp_sensor_status = TempSensorStatus::BROKEN;
-        } else if (temp_sensor_status == TempSensorStatus::UNKNOWN) {
-            temp_sensor_status = TempSensorStatus::OK;
         }
-        actual_pen_temperature *= actual_cpu_voltage;
-        actual_pen_temperature /= Board::Adc::MAX_VALUE;
-        actual_pen_temperature *= 500 * 1000;  // 500 degrees at 3mV
-        actual_pen_temperature /= 3000;
-        pen_temperature += actual_pen_temperature;
         // measurements counter
         idle_measurements_count++;
         if (period_ticks >= PERIOD_TICKS) {
@@ -642,11 +532,11 @@ class MainClass {
         }
     }
 
-    void process(unsigned delta) {
-        uptime_ticks += delta;
-        period_ticks += delta;
-        standby_ticks += delta;
-        buttons_process_fast(delta);
+    void process(unsigned delta_ticks) {
+        uptime_ticks += delta_ticks;
+        period_ticks += delta_ticks;
+        standby_ticks += delta_ticks;
+        buttons_process_fast(delta_ticks);
         switch (period_state) {
             case PeriodState::PERIOD_START: period_start(); break;
             case PeriodState::DEBUG_PROCESS: debug_process(); break;
@@ -654,13 +544,13 @@ class MainClass {
             case PeriodState::DISPLAY_PROCESS: display_process(); break;
             case PeriodState::PID_PROCESS: pid_process(); break;
             case PeriodState::HEATING_START: heating_start(); break;
-            case PeriodState::HEATING_PROCESS: heating_process(delta); break;
+            case PeriodState::HEATING_PROCESS: heating_process(delta_ticks); break;
             case PeriodState::HEATING_END: heating_end(); break;
             case PeriodState::STABILIZE_START: stabilize_start(); break;
-            case PeriodState::STABILIZE_PROCESS: stabilize_process(delta); break;
+            case PeriodState::STABILIZE_PROCESS: stabilize_process(delta_ticks); break;
             case PeriodState::STABILIZE_END: stabilize_end(); break;
             case PeriodState::IDLE_START: idle_start(); break;
-            case PeriodState::IDLE_PROCESS: idle_process(delta); break;
+            case PeriodState::IDLE_PROCESS: idle_process(delta_ticks); break;
             case PeriodState::IDLE_END: idle_end(); break;
         }
     }
@@ -669,10 +559,10 @@ class MainClass {
         Board::clock.init_hw();
         Board::systick.init_hw();
         Board::debug.init_hw();
-        Board::adc.init_hw();
-        Board::i2c.init_hw();
         Board::heater.init_hw();
         Board::buttons.init_hw();
+        Board::adc.init_hw();
+        Board::i2c.init_hw();
         Board::display.init_hw();
     }
 
@@ -691,10 +581,10 @@ public:
         change_state(PeriodState::PERIOD_START);
 
         while (true) {
-            unsigned tm = last_ticks;
+            unsigned delta_ticks = last_ticks;
             last_ticks = Board::systick.get_counter();
-            tm = ((1 << Board::Systick::DIV_BITS) - 1) & (tm - last_ticks);
-            process(tm);
+            delta_ticks = ((1 << Board::Systick::DIV_BITS) - 1) & (delta_ticks - last_ticks);
+            process(delta_ticks);
         }
     }
 };

@@ -1,6 +1,5 @@
 #pragma once
 
-// #include <stdlib.h>
 #include "board/gpio.hpp"
 #include "board/i2c.hpp"
 #include "lib/ssd1306.hpp"
@@ -20,7 +19,6 @@ class Display {
     typedef uint32_t HEIGHT_TYPE;
 
     unsigned char init_cmds[32] = {
-        // 96x16
         Ssd1306::CO_CMD,
         Ssd1306::DISPLAYOFF,
         Ssd1306::SETDISPLAYCLOCKDIV, 0xf0,
@@ -33,7 +31,6 @@ class Display {
         Ssd1306::COMSCANDEC,
         Ssd1306::SETCOMPINS, 0x02,
         Ssd1306::SETCONTRAST, 0x22,  // 0xcf
-        // Ssd1306::SETCONTRAST, 0xcf,  // 0xcf
         Ssd1306::SETPRECHARGE, 0x00,
         Ssd1306::SETVCOMDESELECT, 0x40,
         Ssd1306::DISPLAYALLON_RESUME,

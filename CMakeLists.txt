@@ -52,7 +52,6 @@ add_executable(${PROJECT_NAME}
     ${IO_DIR}/io/handlers/cortexm
     ${IO_DIR}/io/handlers/stm32/f0
     ${IO_DIR}/io/startup/stm32/f0
-    src/pure_virtual_stub
     src/lib/font
     src/lib/str
     src/board/hardfault
