@@ -12,6 +12,7 @@
 #include "lib/font.hpp"
 #include "lib/pid.hpp"
 #include "lib/button.hpp"
+#include "lib/preset.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
@@ -43,8 +44,6 @@ class MainClass {
     int stabilize_ticks = 0;
     int idle_ticks = 0;
     int heat_ticks = 0;
-    int preset_temperature[2] = { 300 * 1000, 250 * 1000};  // 0.001 degree C
-    int preset_temperature_select = 0;
     int pen_temperature = 0;  // 0.001 degree C
     int cpu_temperature = 0;  // 0.001 degree C
     int cpu_voltage_idle = 0;  // mV
@@ -58,6 +57,7 @@ class MainClass {
     int average_request_power = 0;
     int average_request_power_short = 0;
 
+    Preset preset;
     Pid pid;
 
     enum class PeriodState {
@@ -151,7 +151,6 @@ class MainClass {
         mode = Mode::ON;
     }
 
-    int edit_preset = -1;
     int edit_blink = 0;
     bool edit_blocking = false;
 
@@ -159,16 +158,16 @@ class MainClass {
         Button::Action btn_up = button_up.get_status();
         Button::Action btn_dw = button_dw.get_status();
         Button::Action btn_both = button_both.get_status();
-        if (edit_preset < 0) {
+        if (!preset.is_editing()) {
             switch (btn_up) {
                 case Button::Action::RELEASED_SHORT:
                     // wake-up and preset 1
-                    preset_temperature_select = 0;
+                    preset.select(0);
                     set_on();
                     break;
                 case Button::Action::PRESSED_LONG:
                     // edit preset 1
-                    edit_preset = 0;
+                    preset.edit_select(0);
                     edit_blink = 5;
                     edit_blocking = true;
                     break;
@@ -178,15 +177,15 @@ class MainClass {
             switch (btn_dw) {
                 case Button::Action::RELEASED_SHORT:
                     // wake-up and preset 2
-                    preset_temperature_select = 1;
+                    preset.select(1);
                     set_on();
                     break;
                 case Button::Action::PRESSED_LONG:
                     // edit preset 2
-                    edit_preset = 1;
+                    preset.edit_select(1);
                     edit_blink = 5;
                     edit_blocking = true;
-                    return;
+                    break;
                 default:
                     break;
             }
@@ -206,13 +205,8 @@ class MainClass {
                 case Button::Action::PRESSED_LONG:
                 case Button::Action::REPEAT:
                     if (edit_blocking) break;
-                    if (preset_temperature[edit_preset] < PRESET_TEMPERATURE_MAX) {
-                        preset_temperature[edit_preset] += PRESET_TEMPERATURE_STEP;
-                    }
+                    preset.edit_add(PRESET_TEMPERATURE_STEP);
                     edit_blink = 0;
-                case Button::Action::DOWN:
-                    edit_blocking = false;
-                    edit_blink = -6;
                 default:
                     break;
             }
@@ -221,19 +215,18 @@ class MainClass {
                 case Button::Action::PRESSED_LONG:
                 case Button::Action::REPEAT:
                     if (edit_blocking) break;
-                    if (preset_temperature[edit_preset] > PRESET_TEMPERATURE_MIN) {
-                        preset_temperature[edit_preset] -= PRESET_TEMPERATURE_STEP;
-                    }
+                    preset.edit_add(-PRESET_TEMPERATURE_STEP);
                     edit_blink = 0;
-                case Button::Action::DOWN:
-                    edit_blocking = false;
-                    edit_blink = -6;
                 default:
                     break;
             }
+            if ((btn_up == Button::Action::NONE) && (btn_dw == Button::Action::NONE)) {
+                edit_blocking = false;
+                edit_blink = -6;
+            }
             switch (btn_both) {
                 case Button::Action::RELEASED_SHORT:
-                    edit_preset = -1;
+                    preset.edit_end();
                     break;
                 default:
                     break;
@@ -261,12 +254,12 @@ class MainClass {
     }
 
     /** display preset temperature in 1/1000 degree Celsius */
-    void display_preset_temperature(int x, int y, int preset) {
-        if ((edit_preset == preset) && (edit_blink > 4)) return;
+    void display_preset_temperature(int x, int y, int preset_draw) {
+        if ((preset.get_edited() == preset_draw) && (edit_blink > 4)) return;
         auto &fb = Board::display.get_fb();
         char tmps[20];
-        Str::i2a(preset_temperature[preset] / 1000, 3, '\240', tmps);
-        if (preset_temperature_select != preset) {
+        Str::i2a(preset.get_preset(preset_draw) / 1000, 3, '\240', tmps);
+        if (preset.get_selected() != preset_draw) {
             x = 6;
         } else if (mode == Mode::STANDBY) {
             x = fb.draw_text(x, y, "\274", Font::num13);
@@ -397,7 +390,7 @@ class MainClass {
             change_state(PeriodState::HEATING_START);
             return;
         }
-        int request_temperature = preset_temperature[preset_temperature_select];
+        int request_temperature = preset.get_temperature();
         if (mode == Mode::STANDBY) {
             request_temperature = STANDBY_TEMPERATURE;
         }
