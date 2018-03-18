@@ -132,9 +132,9 @@ class MainClass {
         buttons_sample_ticks += delta_ticks;
         if (buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
         buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
-        button_up.process_fast(Board::buttons.is_pressed_up(), Board::buttons.is_pressed_down());
-        button_dw.process_fast(Board::buttons.is_pressed_down(), Board::buttons.is_pressed_up());
-        button_both.process_fast(Board::buttons.is_pressed_up() && Board::buttons.is_pressed_down(), false);
+        button_up.process(Board::buttons.is_pressed_up(), Board::buttons.is_pressed_down(), 10);
+        button_dw.process(Board::buttons.is_pressed_down(), Board::buttons.is_pressed_up(), 10);
+        button_both.process(Board::buttons.is_pressed_up() && Board::buttons.is_pressed_down(), false, 10);
     }
 
     enum class Mode {
@@ -156,9 +156,9 @@ class MainClass {
     bool edit_blocking = false;
 
     void buttons_process_main() {
-        Button::Action btn_up = button_up.process();
-        Button::Action btn_dw = button_dw.process();
-        Button::Action btn_both = button_both.process();
+        Button::Action btn_up = button_up.get_status();
+        Button::Action btn_dw = button_dw.get_status();
+        Button::Action btn_both = button_both.get_status();
         if (edit_preset < 0) {
             switch (btn_up) {
                 case Button::Action::RELEASED_SHORT:
@@ -210,7 +210,7 @@ class MainClass {
                         preset_temperature[edit_preset] += PRESET_TEMPERATURE_STEP;
                     }
                     edit_blink = 0;
-                case Button::Action::PRESSED:
+                case Button::Action::DOWN:
                     edit_blocking = false;
                     edit_blink = -6;
                 default:
@@ -225,7 +225,7 @@ class MainClass {
                         preset_temperature[edit_preset] -= PRESET_TEMPERATURE_STEP;
                     }
                     edit_blink = 0;
-                case Button::Action::PRESSED:
+                case Button::Action::DOWN:
                     edit_blocking = false;
                     edit_blink = -6;
                 default:

@@ -1,71 +1,62 @@
 #pragma once
 
 class Button {
-    static const int LONG_DOWN_CYCLES = 6;
-    static const int LONG_REPEAT_CYCLES = 7;
-    static const int REPEAT_CYCLES = 1;
-    int press_cycles = 0;
-    unsigned pressed = 0;
-    unsigned released = 0;
+    static const unsigned LONG_DOWN_MILISECONDS = 1000;
+    unsigned pressed_miliseconds = 0;
+    unsigned released_short_counter = 0;
     bool down = false;
     bool others = false;
+    bool pressed_long = false;
+    bool repeat = false;
 
 public:
     enum class Action {
         NONE,
-        PRESSED,
+        DOWN,
         RELEASED_SHORT,
         PRESSED_LONG,
         REPEAT,
-        RELEASED_LONG,
     };
 
-    void process_fast(bool is_pressed, bool others_pressed) {
-        if ((is_pressed && others) || others_pressed) {
+    void process(bool pressed, bool others_pressed, unsigned delta_ms) {
+        if (pressed && others) return;
+        others = others_pressed;
+        if (others) {
             down = false;
-            others = true;
-            pressed = 0;
-            released = 0;
-            return;
-        } else {
-            others = false;
-        }
-        if (down == is_pressed) {
+            pressed_miliseconds = 0;
             return;
         }
-        down = is_pressed;
-        if (is_pressed) {
-            press_cycles = 0;
-            pressed++;
-        } else {
-            released++;
-            down = 0;
+        if (pressed) {
+            pressed_miliseconds += delta_ms;
+            if (pressed_miliseconds >= LONG_DOWN_MILISECONDS) {
+                pressed_long = true;
+            }
+        }
+        if (down == pressed) return;
+        down = pressed;
+        if (pressed) {
+            pressed_miliseconds = 0;
+        } else if (pressed_miliseconds < LONG_DOWN_MILISECONDS) {
+            released_short_counter++;
         }
     }
 
-    Action process() {
-        if (down) {
-            press_cycles++;
-            if (press_cycles == LONG_DOWN_CYCLES) {
-                return Action::PRESSED_LONG;
+    Action get_status() {
+        if (pressed_long) {
+            pressed_long = false;
+            if (repeat) {
+                return Action::REPEAT;
             }
+            repeat = true;
+            return Action::PRESSED_LONG;
+        } else {
+            repeat = false;
         }
-        if (pressed) {
-            pressed--;
-            return Action::PRESSED;
+        if (released_short_counter) {
+            released_short_counter--;
+            return Action::RELEASED_SHORT;
         }
-        if (released) {
-            released--;
-            if (press_cycles >= LONG_DOWN_CYCLES) {
-                return Action::RELEASED_LONG;
-            } else {
-                return Action::RELEASED_SHORT;
-            }
-        }
-        if (down && (press_cycles >= (LONG_REPEAT_CYCLES))) {
-            press_cycles -= REPEAT_CYCLES;
-            return Action::REPEAT;
-        }
+        if (down) return Action::DOWN;
         return Action::NONE;
     }
 };
