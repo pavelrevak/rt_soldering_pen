@@ -5,13 +5,13 @@ class Button {
     unsigned pressed_miliseconds = 0;
     unsigned released_short_counter = 0;
     bool down = false;
-    bool others = false;
+    bool blocked = false;
     bool pressed_long = false;
     bool repeat = false;
 
 public:
     enum class Action {
-        NONE,
+        NONE = 0,
         DOWN,
         RELEASED_SHORT,
         PRESSED_LONG,
@@ -19,9 +19,9 @@ public:
     };
 
     void process(bool pressed, bool others_pressed, unsigned delta_ms) {
-        if (pressed && others) return;
-        others = others_pressed;
-        if (others) {
+        if (pressed && blocked) return;
+        blocked = others_pressed;
+        if (blocked) {
             down = false;
             pressed_miliseconds = 0;
             return;
@@ -58,5 +58,9 @@ public:
         }
         if (down) return Action::DOWN;
         return Action::NONE;
+    }
+
+    void block() {
+        blocked = true;
     }
 };

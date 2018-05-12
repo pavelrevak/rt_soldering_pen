@@ -13,21 +13,19 @@
 #include "lib/pid.hpp"
 #include "lib/button.hpp"
 #include "lib/preset.hpp"
+#include "screen/main.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
 
-    static const int PERIOD_TIME = 150;  // 200 ms
-    static const int STABILIZE_TIME = 2;  // 2 ms
-    static const int IDLE_TIME_MIN = 8;  // 8 ms
-    static const int PERIOD_TICKS = Board::Clock::CORE_FREQ / 1000 * PERIOD_TIME;
-    static const int PERIOD_HEATING_TICKS = Board::Clock::CORE_FREQ / 1000 * (PERIOD_TIME - STABILIZE_TIME - IDLE_TIME_MIN);
-    static const int STABILIZE_TICKS = Board::Clock::CORE_FREQ / 1000 * STABILIZE_TIME;  // 2 ms
-    static const int PRESET_TEMPERATURE_MIN = 20 * 1000;  // 20 degree C
-    static const int PRESET_TEMPERATURE_MAX = 400 * 1000;  // 400 degree C
-    static const int PRESET_TEMPERATURE_STEP = 10 * 1000;  //  10 degree C
-    static const int STANDBY_TEMPERATURE = 20 * 1000;  //  20 degree C
-    static const int STANDBY_TICKS = 30 * Board::Clock::CORE_FREQ;  // 60 s
+    static const int PERIOD_TIME_MS = 150;  // ms
+    static const int STABILIZE_TIME_MS = 2;  // ms
+    static const int IDLE_TIME_MIN_MS = 8;  // ms
+    static const int STANDBY_TIME_S = 30;  // s
+    static const int PERIOD_TICKS = Board::Clock::CORE_FREQ / 1000 * PERIOD_TIME_MS;
+    static const int PERIOD_HEATING_TICKS = Board::Clock::CORE_FREQ / 1000 * (PERIOD_TIME_MS - STABILIZE_TIME_MS - IDLE_TIME_MIN_MS);
+    static const int STABILIZE_TICKS = Board::Clock::CORE_FREQ / 1000 * STABILIZE_TIME_MS;
+    static const int64_t STANDBY_TICKS = STANDBY_TIME_S * Board::Clock::CORE_FREQ;
     static const int PID_K_PROPORTIONAL = 700;
     static const int PID_K_INTEGRAL = 200;
     static const int PID_K_DERIVATE = 100;
@@ -35,7 +33,7 @@ class MainClass {
     static const int HEATING_POWER_MAX = 40 * 1000;  // 20.0 W
 
     int64_t uptime_ticks = 0;
-    int64_t standby_ticks = STANDBY_TICKS;  // PERIOD_TICKS / s
+    int64_t standby_ticks = 0;  // PERIOD_TICKS / s
     int64_t heating_power = 0;  // uW * PERIOD_TICKS
     int64_t cumulated_power = 0;  // uW * PERIOD_TICKS
     int64_t total_power = 0;  // uW * CORE_FREQ
@@ -60,6 +58,9 @@ class MainClass {
     Preset preset;
     Pid pid;
 
+    screen::Main screen_main;
+    screen::Screen *current_screen = &screen_main;
+
     enum class PeriodState {
         PERIOD_START,
         DEBUG_PROCESS,
@@ -77,10 +78,6 @@ class MainClass {
         IDLE_END,
     } period_state;
 
-    void change_state(PeriodState state) {
-        period_state = state;
-    }
-
     enum class TempSensorStatus {
         UNKNOWN,
         OK,
@@ -97,8 +94,8 @@ class MainClass {
     } heating_element_status = HeatingElementStatus::UNKNOWN;
 
     void period_start() {
-        // change_state(PeriodState::DEBUG_PROCESS);
-        change_state(PeriodState::BUTTONS_PROCESS);
+        // period_state = PeriodState::DEBUG_PROCESS;
+        period_state = PeriodState::BUTTONS_PROCESS;
     }
 
     void debug_process() {
@@ -119,7 +116,7 @@ class MainClass {
         // Board::debug.dbg << ',' << heating_power / PERIOD_TICKS / 1000;
         // Board::debug.dbg << ',' << cumulated_power / PERIOD_TICKS / 1000;
         // Board::debug.dbg << IOStream::endl;
-        change_state(PeriodState::BUTTONS_PROCESS);
+        period_state = PeriodState::BUTTONS_PROCESS;
     }
 
     static const unsigned BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;
@@ -132,107 +129,11 @@ class MainClass {
         buttons_sample_ticks += delta_ticks;
         if (buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
         buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
-        button_up.process(Board::buttons.is_pressed_up(), Board::buttons.is_pressed_down(), 10);
-        button_dw.process(Board::buttons.is_pressed_down(), Board::buttons.is_pressed_up(), 10);
-        button_both.process(Board::buttons.is_pressed_up() && Board::buttons.is_pressed_down(), false, 10);
-    }
-
-    enum class Mode {
-        STANDBY,
-        ON,
-    } mode = Mode::STANDBY;
-
-    void set_standby() {
-        mode = Mode::STANDBY;
-    }
-
-    void set_on() {
-        standby_ticks = 0;
-        mode = Mode::ON;
-    }
-
-    int edit_blink = 0;
-    bool edit_blocking = false;
-
-    void buttons_process_main() {
-        Button::Action btn_up = button_up.get_status();
-        Button::Action btn_dw = button_dw.get_status();
-        Button::Action btn_both = button_both.get_status();
-        if (!preset.is_editing()) {
-            switch (btn_up) {
-                case Button::Action::RELEASED_SHORT:
-                    // wake-up and preset 1
-                    preset.select(0);
-                    set_on();
-                    break;
-                case Button::Action::PRESSED_LONG:
-                    // edit preset 1
-                    preset.edit_select(0);
-                    edit_blink = 5;
-                    edit_blocking = true;
-                    break;
-                default:
-                    break;
-            }
-            switch (btn_dw) {
-                case Button::Action::RELEASED_SHORT:
-                    // wake-up and preset 2
-                    preset.select(1);
-                    set_on();
-                    break;
-                case Button::Action::PRESSED_LONG:
-                    // edit preset 2
-                    preset.edit_select(1);
-                    edit_blink = 5;
-                    edit_blocking = true;
-                    break;
-                default:
-                    break;
-            }
-            switch (btn_both) {
-                case Button::Action::RELEASED_SHORT:
-                    set_standby();
-                    break;
-                case Button::Action::PRESSED_LONG:
-                    // enter MENU
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            switch (btn_up) {
-                case Button::Action::RELEASED_SHORT:
-                case Button::Action::PRESSED_LONG:
-                case Button::Action::REPEAT:
-                    if (edit_blocking) break;
-                    preset.edit_add(PRESET_TEMPERATURE_STEP);
-                    edit_blink = 0;
-                default:
-                    break;
-            }
-            switch (btn_dw) {
-                case Button::Action::RELEASED_SHORT:
-                case Button::Action::PRESSED_LONG:
-                case Button::Action::REPEAT:
-                    if (edit_blocking) break;
-                    preset.edit_add(-PRESET_TEMPERATURE_STEP);
-                    edit_blink = 0;
-                default:
-                    break;
-            }
-            if ((btn_up == Button::Action::NONE) && (btn_dw == Button::Action::NONE)) {
-                edit_blocking = false;
-                edit_blink = -6;
-            }
-            switch (btn_both) {
-                case Button::Action::RELEASED_SHORT:
-                    preset.edit_end();
-                    break;
-                default:
-                    break;
-            }
-        }
-        change_state(PeriodState::DISPLAY_PROCESS);
+        bool btn_up = Board::buttons.is_pressed_up();
+        bool btn_dw = Board::buttons.is_pressed_dw();
+        button_up.process(btn_up, btn_dw, 10);
+        button_dw.process(btn_dw, btn_up, 10);
+        button_both.process(btn_up && btn_dw, false, 10);
     }
 
     enum class Screen {
@@ -242,133 +143,30 @@ class MainClass {
     } screen = Screen::MAIN;
 
     void buttons_process() {
+        Button::Action btn_up = button_up.get_status();
+        Button::Action btn_dw = button_dw.get_status();
+        Button::Action btn_both = button_both.get_status();
         switch (screen) {
-        case Screen::MAIN:
-            buttons_process_main();
-            break;
-        case Screen::INFO:
-            break;
-        case Screen::SETUP:
-            break;
+            case Screen::MAIN:
+                if (current_screen->button_up(btn_up)) button_up.block();
+                if (current_screen->button_dw(btn_dw)) button_dw.block();
+                if (current_screen->button_both(btn_both)) button_both.block();
+                break;
+            case Screen::INFO:
+                break;
+            case Screen::SETUP:
+                break;
         }
+        period_state = PeriodState::DISPLAY_PROCESS;
     }
-
-    /** display preset temperature in 1/1000 degree Celsius */
-    void display_preset_temperature(int x, int y, int preset_draw) {
-        if ((preset.get_edited() == preset_draw) && (edit_blink > 4)) return;
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        Str::i2a(preset.get_preset(preset_draw) / 1000, 3, '\240', tmps);
-        if (preset.get_selected() != preset_draw) {
-            x = 6;
-        } else if (mode == Mode::STANDBY) {
-            x = fb.draw_text(x, y, "\274", Font::num13);
-        } else {
-            x = fb.draw_text(x, y, "\275", Font::num13);
-        }
-        x = fb.draw_text(x, y, tmps, Font::num13);
-        fb.draw_text(x, y, "\260C", Font::num7);
-    }
-
-    /** display temperature in 1/1000 degree Celsius */
-    void display_temperature(int x, int y, int temperature) {
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        Str::i2a((temperature + 500) / 1000, 3, '\240', tmps);
-        // Str::i2a((temperature + 500) / 1000, 3, '0', tmps);
-        x = fb.draw_text(x, y, tmps, Font::num22);
-        fb.draw_text(x, y, "\260C", Font::num9);
-    }
-
-    /** display voltage in millivolts */
-    void display_voltage(int x, int y, int voltage) {
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        if (voltage < 10 * 1000) {
-            Str::d2a((voltage) / 10, 1, 2, '\240', tmps);
-        } else {
-            Str::d2a((voltage) / 100, 1, 1, '\240', tmps);
-        }
-        x = fb.draw_text(x, y, tmps, Font::num7);
-        fb.draw_char(x, y, 'V', Font::sans8);
-    }
-
-    /** display power in milliwatts */
-    void display_watts(int x, int y, int watts) {
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        Str::d2a(watts / 100, 2, 1, '\240', tmps);
-        x = fb.draw_text(x, y, tmps, Font::num7);
-        fb.draw_char(x, y, 'W', Font::sans8);
-    }
-
-    /** display power in milliwatts */
-    void display_watt_hours(int x, int y, int watt_hours) {
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        if (watt_hours < 100000) {
-            Str::d2a(watt_hours / 10, 2, 2, '\240', tmps);
-        } else {
-            Str::d2a(watt_hours / 100, 3, 1, '\240', tmps);
-        }
-        x = fb.draw_text(x, y, tmps, Font::num7);
-        fb.draw_text(x, y, "Wh", Font::sans8);
-    }
-
-    void display_time(int x, int y, int time) {
-        auto &fb = Board::display.get_fb();
-        char tmps[20];
-        Str::i2a(time, 3, '\240', tmps);
-        x = fb.draw_text(x, y, tmps, Font::num7);
-    }
-
-    int blink = 0;
 
     void display_process_main() {
         if (Board::i2c.is_busy()) return;
         auto &fb = Board::display.get_fb();
         fb.clear();
-        if (blink++ >= 6) blink = 0;
-        if (edit_blink++ >= 6) edit_blink = 0;
-        display_preset_temperature(0, 0, 0);
-        display_preset_temperature(0, 19, 1);
-        display_voltage(106, 14, supply_voltage_idle);
-
-        int temperature = cpu_temperature;
-        if ((temp_sensor_status == TempSensorStatus::OK) && (heating_element_status <= HeatingElementStatus::OK)) {
-            temperature += pen_temperature;
-            if (supply_voltage_drop) {
-                display_voltage(100, 25, supply_voltage_drop);
-            }
-            display_watt_hours(45, 0, total_power / Board::Clock::CORE_FREQ / 1000 / 3600);
-            // display_time(45, 0, standby_ticks / Board::Clock::CORE_FREQ);
-            // display_watts(75, 0, average_request_power_short - average_request_power);
-            if (mode == Mode::STANDBY) {
-                if ((blink < 4) || (pen_temperature < 20000)) {
-                    fb.draw_text(87, 0, "STANDBY", Font::sans8);
-                }
-            } else {
-                display_watts(106, 0, cumulated_power / PERIOD_TICKS / 1000);
-                if (standby_ticks > Board::Clock::CORE_FREQ * 4) {
-                    fb.draw_text(83, 0, "IDLE", Font::sans8);
-                } else if (standby_ticks > Board::Clock::CORE_FREQ * 3) {
-                    fb.draw_text(83, 0, "IDL", Font::sans8);
-                } else if (standby_ticks > Board::Clock::CORE_FREQ * 2) {
-                    fb.draw_text(83, 0, "ID", Font::sans8);
-                } else if (standby_ticks > Board::Clock::CORE_FREQ * 1) {
-                    fb.draw_text(83, 0, "I", Font::sans8);
-                }
-            }
-        } else if (temp_sensor_status == TempSensorStatus::BROKEN) {
-            fb.draw_text(83, 0, "NO RT TIP", Font::sans8);
-        } else {
-            fb.draw_text(66, 0, "RT TIP ERROR", Font::sans8);
-            temperature += pen_temperature;
-        }
-        display_temperature(48, 10, temperature);
-
+        current_screen->redraw();
         Board::display.redraw();
-        change_state(PeriodState::PID_PROCESS);
+        period_state = PeriodState::PID_PROCESS;
     }
 
     void display_process() {
@@ -387,14 +185,10 @@ class MainClass {
         if (temp_sensor_status != TempSensorStatus::OK) {
             pid.reset();
             heating_power = 0;
-            change_state(PeriodState::HEATING_START);
+            period_state = PeriodState::HEATING_START;
             return;
         }
-        int request_temperature = preset.get_temperature();
-        if (mode == Mode::STANDBY) {
-            request_temperature = STANDBY_TEMPERATURE;
-        }
-        int request_power = pid.process(cpu_temperature + pen_temperature, request_temperature);
+        int request_power = pid.process(cpu_temperature + pen_temperature, preset.get_temperature());
         // limit pen power
         if (request_power > HEATING_POWER_MAX) request_power = HEATING_POWER_MAX;
         if (request_power < HEATING_POWER_MIN) request_power = 0;
@@ -406,14 +200,14 @@ class MainClass {
         average_request_power *= 9;
         average_request_power += request_power;
         average_request_power /= 10;
-        change_state(PeriodState::HEATING_START);
+        period_state = PeriodState::HEATING_START;
     }
 
     void heating_start() {
         cumulated_power = 0;
         heat_ticks = 0;
         if ((temp_sensor_status != TempSensorStatus::OK) || (heating_power <= 0)) {
-            change_state(PeriodState::IDLE_START);
+            period_state = PeriodState::IDLE_START;
             return;
         }
         heating_element_status = HeatingElementStatus::UNKNOWN;
@@ -424,7 +218,7 @@ class MainClass {
         pen_current = 0;
         Board::adc.measure_heat_start();
         Board::heater.on();
-        change_state(PeriodState::HEATING_PROCESS);
+        period_state = PeriodState::HEATING_PROCESS;
     }
 
     void heating_process(unsigned delta_ticks) {
@@ -440,7 +234,7 @@ class MainClass {
         if ((cumulated_power >= heating_power) || (period_ticks >= PERIOD_HEATING_TICKS)) {
             total_power += cumulated_power;
             Board::heater.off();
-            change_state(PeriodState::HEATING_END);
+            period_state = PeriodState::HEATING_END;
             return;
         }
         Board::adc.measure_heat_start();
@@ -451,22 +245,25 @@ class MainClass {
         supply_voltage_heat /= heat_measurements_count;
         supply_voltage_drop = supply_voltage_heat - supply_voltage_idle;
         pen_current /= heat_measurements_count;
-        change_state(PeriodState::STABILIZE_START);
+        screen_main.set_supply_voltage_drop(supply_voltage_drop);
+        screen_main.set_total_power(total_power / Board::Clock::CORE_FREQ / 1000 / 3600);
+
+        period_state = PeriodState::STABILIZE_START;
     }
 
     void stabilize_start() {
         stabilize_ticks = 0;
-        change_state(PeriodState::STABILIZE_PROCESS);
+        period_state = PeriodState::STABILIZE_PROCESS;
     }
 
     void stabilize_process(unsigned delta_ticks) {
         stabilize_ticks += delta_ticks;
         if (stabilize_ticks < STABILIZE_TICKS) return;
-        change_state(PeriodState::STABILIZE_END);
+        period_state = PeriodState::STABILIZE_END;
     }
 
     void stabilize_end() {
-        change_state(PeriodState::IDLE_START);
+        period_state = PeriodState::IDLE_START;
     }
 
     void idle_start() {
@@ -478,7 +275,8 @@ class MainClass {
         cpu_temperature = 0;
         supply_voltage_idle = 0;
         Board::adc.measure_idle_start();
-        change_state(PeriodState::IDLE_PROCESS);
+        screen_main.set_heating_power(cumulated_power / PERIOD_TICKS / 1000);
+        period_state = PeriodState::IDLE_PROCESS;
     }
 
     void idle_process(unsigned delta_ticks) {
@@ -489,7 +287,7 @@ class MainClass {
         cpu_temperature += Board::adc.get_cpu_temperature();
         if (Board::adc.is_pen_broken()) {
             if (temp_sensor_status != TempSensorStatus::BROKEN) {
-                set_standby();
+                preset.set_standby();
             }
             temp_sensor_status = TempSensorStatus::BROKEN;
         } else {
@@ -502,7 +300,7 @@ class MainClass {
         idle_measurements_count++;
         if (period_ticks >= PERIOD_TICKS) {
             period_ticks -= PERIOD_TICKS;
-            change_state(PeriodState::IDLE_END);
+            period_state = PeriodState::IDLE_END;
             return;
         }
         Board::adc.measure_idle_start();
@@ -513,15 +311,22 @@ class MainClass {
         supply_voltage_idle /= idle_measurements_count;
         cpu_temperature /= idle_measurements_count;
         pen_temperature /= idle_measurements_count;
-        change_state(PeriodState::PERIOD_START);
+        period_state = PeriodState::PERIOD_START;
+        if (temp_sensor_status == TempSensorStatus::OK) {
+            screen_main.set_pen_temperature(cpu_temperature + pen_temperature);
+        } else {
+            screen_main.set_pen_temperature(cpu_temperature);
+        }
+        screen_main.set_supply_voltage_idle(supply_voltage_idle);
         if (standby_ticks > STANDBY_TICKS) {
             standby_ticks = STABILIZE_TICKS;
-            set_standby();
+            preset.set_standby();
         } else {
             int derivate_request_power = average_request_power_short - average_request_power;
             if ((derivate_request_power > 150) || derivate_request_power < -200) {
                 standby_ticks = 0;
             }
+            screen_main.set_idle_seconds(standby_ticks / Board::Clock::CORE_FREQ);
         }
     }
 
@@ -560,18 +365,20 @@ class MainClass {
     }
 
 public:
+    MainClass() : screen_main(preset) {}
+
     void run() {
         init_hw();
         io::Nvic::isr_enable();
 
         Board::display.init();
 
-        pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME, HEATING_POWER_MAX);
+        pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME_MS, HEATING_POWER_MAX);
 
         Board::debug.dbg << IOStream::endl;
         last_ticks = Board::systick.get_counter();
 
-        change_state(PeriodState::PERIOD_START);
+        period_state = PeriodState::PERIOD_START;
 
         while (true) {
             unsigned delta_ticks = last_ticks;

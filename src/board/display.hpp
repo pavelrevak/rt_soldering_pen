@@ -8,16 +8,18 @@
 namespace Board {
 
 class Display {
-
     Board::I2c &i2c;
 
     GpioPin<io::base::GPIOA, 15> oled_nrst;
-    // GpioPin<io::base::GPIOA, 8> oled_nrst;  // used on development board
 
     static const int DISPLAY_WIDTH = 128;
     static const int DISPLAY_HEIGHT = 32;
     typedef uint32_t HEIGHT_TYPE;
 
+public:
+    typedef FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> Fb;
+
+private:
     unsigned char init_cmds[32] = {
         Ssd1306::CO_CMD,
         Ssd1306::DISPLAYOFF,
@@ -45,11 +47,11 @@ class Display {
         unsigned char display_buffer_cmds[1] = {
             Ssd1306::CO_DATA,
         };
-        FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> fb;
+        Fb fb;
     } fb_cmds;
 
 public:
-    inline FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> &get_fb() {
+    inline Fb &get_fb() {
         return fb_cmds.fb;
     }
 
