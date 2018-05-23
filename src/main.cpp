@@ -25,7 +25,7 @@ class MainClass {
     static const int PERIOD_TICKS = Board::Clock::CORE_FREQ / 1000 * PERIOD_TIME_MS;
     static const int PERIOD_HEATING_TICKS = Board::Clock::CORE_FREQ / 1000 * (PERIOD_TIME_MS - STABILIZE_TIME_MS - IDLE_TIME_MIN_MS);
     static const int STABILIZE_TICKS = Board::Clock::CORE_FREQ / 1000 * STABILIZE_TIME_MS;
-    static const int64_t STANDBY_TICKS = STANDBY_TIME_S * Board::Clock::CORE_FREQ;
+    static const int64_t STEADY_TICKS = STANDBY_TIME_S * Board::Clock::CORE_FREQ;
     static const int PID_K_PROPORTIONAL = 700;
     static const int PID_K_INTEGRAL = 200;
     static const int PID_K_DERIVATE = 100;
@@ -33,14 +33,14 @@ class MainClass {
     static const int HEATING_POWER_MAX = 40 * 1000;  // 20.0 W
 
     int64_t uptime_ticks = 0;
-    int64_t standby_ticks = 0;  // PERIOD_TICKS / s
+    int64_t staady_ticks = 0;
     int64_t heating_power = 0;  // uW * PERIOD_TICKS
     int64_t cumulated_power = 0;  // uW * PERIOD_TICKS
     int64_t total_power = 0;  // uW * CORE_FREQ
     int period_ticks = 0;
     int measure_cycle_heat_ticks = 0;
     int stabilize_ticks = 0;
-    int idle_ticks = 0;
+    int heat_idle_ticks = 0;
     int heat_ticks = 0;
     int pen_temperature = 0;  // 0.001 degree C
     int cpu_temperature = 0;  // 0.001 degree C
@@ -61,7 +61,7 @@ class MainClass {
     screen::Main screen_main;
     screen::Screen *current_screen = &screen_main;
 
-    enum class PeriodState {
+    enum class HeatPeriodState {
         PERIOD_START,
         DEBUG_PROCESS,
         BUTTONS_PROCESS,
@@ -76,7 +76,7 @@ class MainClass {
         IDLE_START,
         IDLE_PROCESS,
         IDLE_END,
-    } period_state;
+    } heat_period_state;
 
     enum class TempSensorStatus {
         UNKNOWN,
@@ -94,14 +94,14 @@ class MainClass {
     } heating_element_status = HeatingElementStatus::UNKNOWN;
 
     void period_start() {
-        // period_state = PeriodState::DEBUG_PROCESS;
-        period_state = PeriodState::BUTTONS_PROCESS;
+        // heat_period_state = HeatPeriodState::DEBUG_PROCESS;
+        heat_period_state = HeatPeriodState::BUTTONS_PROCESS;
     }
 
     void debug_process() {
         // Board::debug.dbg << uptime_ticks;
         // Board::debug.dbg << ',' << period_ticks;
-        // Board::debug.dbg << ',' << idle_ticks;
+        // Board::debug.dbg << ',' << heat_idle_ticks;
         // Board::debug.dbg << ',' << heat_ticks;
         // Board::debug.dbg << ',' << preset_temperature[preset_temperature_select];
         // Board::debug.dbg << ',' << pen_temperature;
@@ -116,7 +116,7 @@ class MainClass {
         // Board::debug.dbg << ',' << heating_power / PERIOD_TICKS / 1000;
         // Board::debug.dbg << ',' << cumulated_power / PERIOD_TICKS / 1000;
         // Board::debug.dbg << IOStream::endl;
-        period_state = PeriodState::BUTTONS_PROCESS;
+        heat_period_state = HeatPeriodState::BUTTONS_PROCESS;
     }
 
     static const unsigned BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;
@@ -157,7 +157,7 @@ class MainClass {
             case Screen::SETUP:
                 break;
         }
-        period_state = PeriodState::DISPLAY_PROCESS;
+        heat_period_state = HeatPeriodState::DISPLAY_PROCESS;
     }
 
     void display_process_main() {
@@ -166,7 +166,7 @@ class MainClass {
         fb.clear();
         current_screen->redraw();
         Board::display.redraw();
-        period_state = PeriodState::PID_PROCESS;
+        heat_period_state = HeatPeriodState::PID_PROCESS;
     }
 
     void display_process() {
@@ -185,7 +185,7 @@ class MainClass {
         if (temp_sensor_status != TempSensorStatus::OK) {
             pid.reset();
             heating_power = 0;
-            period_state = PeriodState::HEATING_START;
+            heat_period_state = HeatPeriodState::HEATING_START;
             return;
         }
         int request_power = pid.process(cpu_temperature + pen_temperature, preset.get_temperature());
@@ -200,14 +200,14 @@ class MainClass {
         average_request_power *= 9;
         average_request_power += request_power;
         average_request_power /= 10;
-        period_state = PeriodState::HEATING_START;
+        heat_period_state = HeatPeriodState::HEATING_START;
     }
 
     void heating_start() {
         cumulated_power = 0;
         heat_ticks = 0;
         if ((temp_sensor_status != TempSensorStatus::OK) || (heating_power <= 0)) {
-            period_state = PeriodState::IDLE_START;
+            heat_period_state = HeatPeriodState::IDLE_START;
             return;
         }
         heating_element_status = HeatingElementStatus::UNKNOWN;
@@ -218,7 +218,7 @@ class MainClass {
         pen_current = 0;
         Board::adc.measure_heat_start();
         Board::heater.on();
-        period_state = PeriodState::HEATING_PROCESS;
+        heat_period_state = HeatPeriodState::HEATING_PROCESS;
     }
 
     void heating_process(unsigned delta_ticks) {
@@ -234,7 +234,7 @@ class MainClass {
         if ((cumulated_power >= heating_power) || (period_ticks >= PERIOD_HEATING_TICKS)) {
             total_power += cumulated_power;
             Board::heater.off();
-            period_state = PeriodState::HEATING_END;
+            heat_period_state = HeatPeriodState::HEATING_END;
             return;
         }
         Board::adc.measure_heat_start();
@@ -248,27 +248,27 @@ class MainClass {
         screen_main.set_supply_voltage_drop(supply_voltage_drop);
         screen_main.set_total_power(total_power / Board::Clock::CORE_FREQ / 1000 / 3600);
 
-        period_state = PeriodState::STABILIZE_START;
+        heat_period_state = HeatPeriodState::STABILIZE_START;
     }
 
     void stabilize_start() {
         stabilize_ticks = 0;
-        period_state = PeriodState::STABILIZE_PROCESS;
+        heat_period_state = HeatPeriodState::STABILIZE_PROCESS;
     }
 
     void stabilize_process(unsigned delta_ticks) {
         stabilize_ticks += delta_ticks;
         if (stabilize_ticks < STABILIZE_TICKS) return;
-        period_state = PeriodState::STABILIZE_END;
+        heat_period_state = HeatPeriodState::STABILIZE_END;
     }
 
     void stabilize_end() {
-        period_state = PeriodState::IDLE_START;
+        heat_period_state = HeatPeriodState::IDLE_START;
     }
 
     void idle_start() {
         temp_sensor_status = TempSensorStatus::UNKNOWN;
-        idle_ticks = 0;
+        heat_idle_ticks = 0;
         idle_measurements_count = 0;
         cpu_voltage_idle = 0;
         pen_temperature = 0;
@@ -276,11 +276,11 @@ class MainClass {
         supply_voltage_idle = 0;
         Board::adc.measure_idle_start();
         screen_main.set_heating_power(cumulated_power / PERIOD_TICKS / 1000);
-        period_state = PeriodState::IDLE_PROCESS;
+        heat_period_state = HeatPeriodState::IDLE_PROCESS;
     }
 
     void idle_process(unsigned delta_ticks) {
-        idle_ticks += delta_ticks;
+        heat_idle_ticks += delta_ticks;
         if (!Board::adc.measure_is_done()) return;
         cpu_voltage_idle += Board::adc.get_cpu_voltage();
         supply_voltage_idle += Board::adc.get_supply_voltage();
@@ -300,7 +300,7 @@ class MainClass {
         idle_measurements_count++;
         if (period_ticks >= PERIOD_TICKS) {
             period_ticks -= PERIOD_TICKS;
-            period_state = PeriodState::IDLE_END;
+            heat_period_state = HeatPeriodState::IDLE_END;
             return;
         }
         Board::adc.measure_idle_start();
@@ -311,45 +311,45 @@ class MainClass {
         supply_voltage_idle /= idle_measurements_count;
         cpu_temperature /= idle_measurements_count;
         pen_temperature /= idle_measurements_count;
-        period_state = PeriodState::PERIOD_START;
+        heat_period_state = HeatPeriodState::PERIOD_START;
         if (temp_sensor_status == TempSensorStatus::OK) {
             screen_main.set_pen_temperature(cpu_temperature + pen_temperature);
         } else {
             screen_main.set_pen_temperature(cpu_temperature);
         }
         screen_main.set_supply_voltage_idle(supply_voltage_idle);
-        if (standby_ticks > STANDBY_TICKS) {
-            standby_ticks = STABILIZE_TICKS;
+        if (staady_ticks > STEADY_TICKS) {
+            staady_ticks = 0;
             preset.set_standby();
         } else {
             int derivate_request_power = average_request_power_short - average_request_power;
             if ((derivate_request_power > 150) || derivate_request_power < -200) {
-                standby_ticks = 0;
+                staady_ticks = 0;
             }
-            screen_main.set_idle_seconds(standby_ticks / Board::Clock::CORE_FREQ);
+            screen_main.set_idle_seconds(staady_ticks / Board::Clock::CORE_FREQ);
         }
     }
 
     void process(unsigned delta_ticks) {
         uptime_ticks += delta_ticks;
         period_ticks += delta_ticks;
-        standby_ticks += delta_ticks;
+        staady_ticks += delta_ticks;
         buttons_process_fast(delta_ticks);
-        switch (period_state) {
-            case PeriodState::PERIOD_START: period_start(); break;
-            case PeriodState::DEBUG_PROCESS: debug_process(); break;
-            case PeriodState::BUTTONS_PROCESS: buttons_process(); break;
-            case PeriodState::DISPLAY_PROCESS: display_process(); break;
-            case PeriodState::PID_PROCESS: pid_process(); break;
-            case PeriodState::HEATING_START: heating_start(); break;
-            case PeriodState::HEATING_PROCESS: heating_process(delta_ticks); break;
-            case PeriodState::HEATING_END: heating_end(); break;
-            case PeriodState::STABILIZE_START: stabilize_start(); break;
-            case PeriodState::STABILIZE_PROCESS: stabilize_process(delta_ticks); break;
-            case PeriodState::STABILIZE_END: stabilize_end(); break;
-            case PeriodState::IDLE_START: idle_start(); break;
-            case PeriodState::IDLE_PROCESS: idle_process(delta_ticks); break;
-            case PeriodState::IDLE_END: idle_end(); break;
+        switch (heat_period_state) {
+            case HeatPeriodState::PERIOD_START: period_start(); break;
+            case HeatPeriodState::DEBUG_PROCESS: debug_process(); break;
+            case HeatPeriodState::BUTTONS_PROCESS: buttons_process(); break;
+            case HeatPeriodState::DISPLAY_PROCESS: display_process(); break;
+            case HeatPeriodState::PID_PROCESS: pid_process(); break;
+            case HeatPeriodState::HEATING_START: heating_start(); break;
+            case HeatPeriodState::HEATING_PROCESS: heating_process(delta_ticks); break;
+            case HeatPeriodState::HEATING_END: heating_end(); break;
+            case HeatPeriodState::STABILIZE_START: stabilize_start(); break;
+            case HeatPeriodState::STABILIZE_PROCESS: stabilize_process(delta_ticks); break;
+            case HeatPeriodState::STABILIZE_END: stabilize_end(); break;
+            case HeatPeriodState::IDLE_START: idle_start(); break;
+            case HeatPeriodState::IDLE_PROCESS: idle_process(delta_ticks); break;
+            case HeatPeriodState::IDLE_END: idle_end(); break;
         }
     }
 
@@ -378,7 +378,7 @@ public:
         Board::debug.dbg << IOStream::endl;
         last_ticks = Board::systick.get_counter();
 
-        period_state = PeriodState::PERIOD_START;
+        heat_period_state = HeatPeriodState::PERIOD_START;
 
         while (true) {
             unsigned delta_ticks = last_ticks;
