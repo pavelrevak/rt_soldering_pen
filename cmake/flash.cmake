@@ -40,3 +40,11 @@ add_custom_target(flash
     pystlink flash:erase:verify:${PROJECT_NAME}.srec
     DEPENDS ${PROJECT_NAME}.srec
 )
+add_custom_target(flash_bin
+    pystlink flash:erase:verify:${PROJECT_NAME}.bin
+    DEPENDS ${PROJECT_NAME}.bin
+)
+add_custom_target(size
+    ${CMAKE_OBJDUMP} -h -w ${PROJECT_NAME}
+    DEPENDS ${PROJECT_NAME}
+)
