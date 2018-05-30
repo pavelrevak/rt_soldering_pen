@@ -1,3 +1,5 @@
+#pragma once
+
 #include "lib/font.hpp"
 #include "lib/preset.hpp"
 #include "screen/screen.hpp"

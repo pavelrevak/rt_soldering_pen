@@ -1,3 +1,5 @@
+#pragma once
+
 #include "board/display.hpp"
 #include "lib/button.hpp"
 

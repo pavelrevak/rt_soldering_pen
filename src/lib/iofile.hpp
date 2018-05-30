@@ -1,5 +1,4 @@
-#ifndef __LIB_IOFILE_HPP
-#define __LIB_IOFILE_HPP
+#pragma once
 
 class IFile {
 public:
@@ -17,5 +16,3 @@ public:
 
 class IOFile : public IFile, public OFile {
 };
-
-#endif /* __LIB_IOFILE_HPP */
