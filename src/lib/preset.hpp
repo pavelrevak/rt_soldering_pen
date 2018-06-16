@@ -11,7 +11,7 @@ class Preset {
     static const int MAX_TEMPERATURE = 400 * 1000;
     static const int PRESET_TEMPERATURE_MIN = 20 * 1000;  // 20 degree C
     static const int PRESET_TEMPERATURE_MAX = 400 * 1000;  // 400 degree C
-    static const int STANDBY_TEMPERATURE = 20 * 1000;  //  20 degree C
+    static const int STANDBY_TEMPERATURE = 0;  //  20 degree C
 
     int temperatures[PRESETS] = {
         300 * 1000,

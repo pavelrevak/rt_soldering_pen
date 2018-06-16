@@ -66,7 +66,7 @@ private:
     int actual_supply_voltage = 0;
     int actual_pen_temperature = 0;
     int actual_pen_current = 0;
-    bool pen_broken = false;
+    bool pen_sensor_ok = false;
 
     void calculate_cpu_voltage(const int index) {
         int tmp = (io::SYSMEM.VREFINT_CAL << 4) * 3300;
@@ -96,8 +96,8 @@ private:
 
     void calculate_pen_temperature(const int index) {
         int tmp = get_measured(index);
-        pen_broken = tmp > 65000;
-        if (pen_broken) {
+        pen_sensor_ok = tmp <= 65000;
+        if (!pen_sensor_ok) {
             actual_pen_temperature = 0;
             return;
         }
@@ -154,8 +154,8 @@ public:
         return actual_pen_current;
     }
 
-    inline bool is_pen_broken() {
-        return pen_broken;
+    inline bool is_pen_sensor_ok() {
+        return pen_sensor_ok;
     }
 
     void init_hw() {
@@ -163,7 +163,6 @@ public:
         pen_current_input.configure_analog();
         pen_temperature_input.configure_analog();
         supply_voltage_input.configure_analog();
-
         // ADC
         r_adc.CFGR2.b.CKMODE = io::Adc::Cfgr2::Ckmode::PCLK_DIV4;
         r_adc.CR.b.ADCAL = true;

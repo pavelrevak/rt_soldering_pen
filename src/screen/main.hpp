@@ -18,8 +18,9 @@ class Main : public Screen {
     int supply_voltage_idle = 0;
     int supply_voltage_drop = 0;
     int heating_power = 0;
-    int total_power = 0;
-    int idle_seconds = 0;
+    int energy = 0;
+    int idle_ms = 0;
+    bool _pen_ok = false;
 
     void preset_selected(int x, int y, bool is_on) {
         x = fb.draw_text(x, y, is_on ? "\275" : "\274" , Font::num13);
@@ -92,7 +93,7 @@ class Main : public Screen {
         if (!preset.is_standby()) {
             watts(106, 0, heating_power);
         }
-        watt_hours(45, 0, total_power);
+        watt_hours(45, 0, energy);
     }
 
     int status_blink = 0;
@@ -100,10 +101,14 @@ class Main : public Screen {
     void draw_state() {
         if (status_blink++ >= 6) status_blink = 0;
         if (preset.is_standby()) {
-            if (pen_temperature < 50000 || status_blink < 4) {
-                fb.draw_text(87, 0, "STANDBY", Font::sans8);
+            if (_pen_ok) {
+                if (pen_temperature < 50000 || status_blink < 4) {
+                    fb.draw_text(87, 0, "STANDBY", Font::sans8);
+                }
+            } else {
+                fb.draw_text(83, 0, "NO RT TIP", Font::sans8);
             }
-        } else if (idle_seconds > 5 && status_blink < 4) {
+        } else if (idle_ms > 5000 && status_blink < 4) {
             fb.draw_text(83, 0, "IDLE", Font::sans8);
         } else {
             status_blink = 0;
@@ -206,6 +211,10 @@ public:
         pen_temperature = temperature + ROUNDING_TEMPERATURE;
     }
 
+    void pen_state(bool pen_ok=true) {
+        _pen_ok = pen_ok;
+    }
+
     void set_supply_voltage_idle(const int voltage) {
         supply_voltage_idle = voltage;
     }
@@ -218,12 +227,12 @@ public:
         heating_power = power;
     }
 
-    void set_total_power(const int power) {
-        total_power = power;
+    void set_energy(const int power) {
+        energy = power;
     }
 
-    void set_idle_seconds(const int seconds) {
-        idle_seconds = seconds;
+    void set_idle_ms(const int seconds) {
+        idle_ms = seconds;
     }
 
     void redraw() {
