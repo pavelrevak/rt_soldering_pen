@@ -6,10 +6,27 @@
 
 class Heating {
 
+public:
+    static const int PERIOD_TIME_MIN_MS = 50;  // ms
+
+    enum class HeatingElementStatus {
+        UNKNOWN,
+        OK,
+        SHORTED,
+        LOW_RESISTANCE,
+        HIGH_RESISTANCE,
+        BROKEN,
+    };
+
+private:
     static const int IDLE_MIN_TIME_MS = 8;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
-    static const int PEN_MAX_CURRENT_MA = 12000;  // mA
+    static const int PEN_MAX_CURRENT_MA = 6000;  // mA
+    static const int PEN_RESISTANCE_SHORTED = 500;  // mOhm
+    static const int PEN_RESISTANCE_MIN = 1500;  // mOhm
+    static const int PEN_RESISTANCE_MAX = 2500;  // mOhm
+    static const int PEN_RESISTANCE_BROKEN = 100000;  // mOhm
 
     int64_t _power_raw = 0;  // uW * _period_ticks
     int64_t _requested_power_raw = 0;  // uW * _period_ticks
@@ -29,8 +46,9 @@ class Heating {
     int _supply_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_drop = 0;  // mV
     int _pen_current_ma = 0;  // mA
-    int _pen_temperature_mc = 0;  // 0.001 degree C
-    int _cpu_temperature_mc = 0;  // 0.001 degree C
+    int _pen_resistance_mo = 0;  // mOhm
+    int _pen_temperature_mc = 0;  // 1/1000 degree C
+    int _cpu_temperature_mc = 0;  // 1/1000 degree C
 
     int _average_requested_power = 0;
     int _average_requested_power_short = 0;
@@ -42,6 +60,8 @@ class Heating {
         STABILIZE,
         IDLE,
     } _state = State::STOP;
+
+    HeatingElementStatus _heating_element_status = HeatingElementStatus::UNKNOWN;
 
     int64_t _ms2ticks(int64_t time_ms) {
         return time_ms * Board::Clock::CORE_FREQ / 1000;
@@ -85,33 +105,41 @@ class Heating {
         Board::heater.on();
         // measure start
         Board::adc.measure_heat_start();
-        heating_element_status = HeatingElementStatus::UNKNOWN;
+        _heating_element_status = HeatingElementStatus::UNKNOWN;
         _state = State::HEATING;
     }
 
     void _state_heating(unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
         if (!Board::adc.measure_is_done()) return;
+        _measurements_count++;
+        // cumulate measured values
         _cpu_voltage_mv_heat += Board::adc.get_cpu_voltage();
         _supply_voltage_mv_heat += Board::adc.get_supply_voltage();
         _pen_current_ma += Board::adc.get_pen_current();
+        // cumulate energy
         _power_raw += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * _measure_ticks;
-        _measurements_count++;
         _measure_ticks = 0;
-        if (_power_raw < _requested_power_raw) {
-            if (_remaining_ticks > _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS)) {
-                Board::adc.measure_heat_start();
-                return;
-            }
+        // check over current
+        bool stop = (_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA;
+        // check reached power
+        stop |= _power_raw > _requested_power_raw;
+        // check reached time
+        stop |= _remaining_ticks < _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS);
+        if (stop) {
+            // disable heater
+            Board::heater.off();
+            _energy_raw += _power_raw;
+            _cpu_voltage_mv_heat /= _measurements_count;
+            _supply_voltage_mv_heat /= _measurements_count;
+            _pen_current_ma /= _measurements_count;
+            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
+            _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
+            _state = State::STABILIZE;
+            return;
         }
-        // disable heater
-        Board::heater.off();
-        _energy_raw += _power_raw;
-        _cpu_voltage_mv_heat /= _measurements_count;
-        _supply_voltage_mv_heat /= _measurements_count;
-        _pen_current_ma /= _measurements_count;
-        _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
-        _state = State::STABILIZE;
+        // continue heating
+        Board::adc.measure_heat_start();
     }
 
     void _state_stabilize(unsigned delta_ticks) {
@@ -143,21 +171,30 @@ class Heating {
         _supply_voltage_mv_idle /= _measurements_count;
         _cpu_temperature_mc /= _measurements_count;
         _pen_temperature_mc /= _measurements_count;
+        // check heating element status
+        if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
+            _heating_element_status = HeatingElementStatus::SHORTED;
+        } else if (_pen_resistance_mo < PEN_RESISTANCE_MIN) {
+            _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
+        } else if (_pen_resistance_mo > PEN_RESISTANCE_BROKEN) {
+            _heating_element_status = HeatingElementStatus::BROKEN;
+        } else if (_pen_resistance_mo > PEN_RESISTANCE_MAX) {
+            _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
+        } else {
+            _heating_element_status = HeatingElementStatus::OK;
+        }
         _state = State::STOP;
     }
 
 public:
-    static const int PERIOD_TIME_MIN_MS = 50;  // ms -> TODO duplicate
-
-    enum class HeatingElementStatus {
-        UNKNOWN,
-        OK,
-        BROKEN,
-        SHORTED,
-        WRONG_RESISTANCE,
-    } heating_element_status = HeatingElementStatus::UNKNOWN;
-
+    /** Start heating cycle
+     *
+     *  Arguments:
+     *      power: requested power for heating
+     *      period_ms: period time
+     */
     void start(const int power, const int period_ms) {
+        // assert(_state == State::STOP);
         _period_ms = period_ms;
         _period_ticks = period_ms * (Board::Clock::CORE_FREQ / 1000);
         // ignore very low requested power
@@ -167,12 +204,13 @@ public:
         _state = State::START;
     }
 
-    /**
-     * @brief process _state machine
-     * @details process _state machine
+    /** Process state machine
      *
-     * @param delta_ticks number of ticks between calls
-     * @return true if heating is processed false if heating is done
+     *  Arguments:
+     *      delta_ticks: number of ticks between each process call
+     *
+     *  Return:
+     *      true during heating cycle, false in stop state
      */
     bool process(unsigned delta_ticks) {
         _remaining_ticks -= delta_ticks;
@@ -196,55 +234,132 @@ public:
         return true;
     }
 
+    /** Getter for actual power
+     *
+     *  Return:
+     *      Actual power in mW
+     */
     int get_power_mw() {
         return _power_raw / _period_ticks / 1000;
     }
 
+    /** Getter for requested power
+     *
+     *  Return:
+     *      requested power in mW
+     */
     int get_requested_power_mw() {
         return _requested_power_mw;
     }
 
+    /** Getter for measured pen resistance
+     *
+     *  Return:
+     *      pen resistance in mOhm
+     */
     int get_pen_resistance_mo() {
-        return _supply_voltage_mv_heat * 1000 / _pen_current_ma;
+        return _pen_resistance_mo;
     }
 
+    /** Getter for total consumed energy
+     *
+     *  Return:
+     *      total energy in mWh
+     */
     int get_energy_mwh() {
         return _energy_raw / Board::Clock::CORE_FREQ / 1000 / 3600;
     }
 
+    /** Getter how long is pen steady
+     *
+     *  Return:
+     *      steady time in ms
+     */
     int get_steady_ms() {
         return _steady_ticks / (Board::Clock::CORE_FREQ / 1000);
     }
 
+    /** Getter for CPU voltage during heating
+     *
+     *  Return:
+     *      CPU voltage during heating in mV
+     */
     int get_cpu_voltage_mv_heat() {
         return _cpu_voltage_mv_heat;
     }
 
+    /** Getter for CPU voltage during idle
+     *
+     *  Return:
+     *      CPU voltage during idle in mV
+     */
     int get_cpu_voltage_mv_idle() {
         return _cpu_voltage_mv_idle;
     }
 
+    /** Getter for supply voltage during heating
+     *
+     *  Return:
+     *      supply voltage during heating in mV
+     */
     int get_supply_voltage_mv_heat() {
         return _supply_voltage_mv_heat;
     }
 
+    /** Getter for supply voltage during idle
+     *
+     *  Return:
+     *      supply voltage during idle in mV
+     */
     int get_supply_voltage_mv_idle() {
         return _supply_voltage_mv_idle;
     }
 
+    /** Getter for supply voltage drop
+     *
+     *  Return:
+     *      supply voltage drop when heating in mV
+     */
     int get_supply_voltage_mv_drop() {
         return _supply_voltage_mv_drop;
     }
 
+    /** Getter for CPU temperature
+     *  (used for measuring temperature of other end of thermo coupler in pen)
+     *
+     *  Return:
+     *      CPU temperature in 1/1000 degree Celsius
+     */
     int get_cpu_temperature_mc() {
         return _cpu_temperature_mc;
     }
 
+    /** Getter for PEN temperature difference
+     *  (temperature difference between both ends of thermo coupler)
+     *
+     *  Return:
+     *      PEN temperature in 1/1000 degree Celsius
+     */
     int get_pen_temperature_mc() {
         return _pen_temperature_mc;
     }
 
+    /** Getter for calculated PEN temperature
+     *
+     *  Return:
+     *      PEN temperature in 1/1000 degree Celsius
+     */
     int get_calculated_pen_temperature_mc() {
         return _cpu_temperature_mc + _pen_temperature_mc;
+    }
+
+    /** Getter heating element state
+     *  indicate if PEN is OK, shorted, broken, with low or high resistance
+     *
+     *  Return:
+     *      state from enum HeatingElementStatus
+     */
+    HeatingElementStatus getHeatingElementStatus() {
+        return _heating_element_status;
     }
 };
