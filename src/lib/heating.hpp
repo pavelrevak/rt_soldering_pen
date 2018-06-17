@@ -18,175 +18,6 @@ public:
         BROKEN,
     };
 
-private:
-    static const int IDLE_MIN_TIME_MS = 8;  // ms
-    static const int STABILIZE_TIME_MS = 2;  // ms
-    static const int HEATING_MIN_POWER_MW = 100;  // mW
-    static const int PEN_MAX_CURRENT_MA = 6000;  // mA
-    static const int PEN_RESISTANCE_SHORTED = 500;  // mOhm
-    static const int PEN_RESISTANCE_MIN = 1500;  // mOhm
-    static const int PEN_RESISTANCE_MAX = 2500;  // mOhm
-    static const int PEN_RESISTANCE_BROKEN = 100000;  // mOhm
-
-    int64_t _power_raw = 0;  // uW * _period_ticks
-    int64_t _requested_power_raw = 0;  // uW * _period_ticks
-    int64_t _energy_raw = 0;  // uW * CORE_FREQ
-    int64_t _steady_ticks = 0;  // ticks when power is steady
-    int _period_ms = 0;
-    int _period_ticks = 0;
-    int _remaining_ticks = 0;
-
-    int _measure_ticks = 0;
-    int _measurements_count = 0;
-
-    int _requested_power_mw = 0;  // mW
-    int _cpu_voltage_mv_heat = 0;  // mV
-    int _cpu_voltage_mv_idle = 0;  // mV
-    int _supply_voltage_mv_heat = 0;  // mV
-    int _supply_voltage_mv_idle = 0;  // mV
-    int _supply_voltage_mv_drop = 0;  // mV
-    int _pen_current_ma = 0;  // mA
-    int _pen_resistance_mo = 0;  // mOhm
-    int _pen_temperature_mc = 0;  // 1/1000 degree C
-    int _cpu_temperature_mc = 0;  // 1/1000 degree C
-
-    int _average_requested_power = 0;
-    int _average_requested_power_short = 0;
-
-    enum class State {
-        STOP,
-        START,
-        HEATING,
-        STABILIZE,
-        IDLE,
-    } _state = State::STOP;
-
-    HeatingElementStatus _heating_element_status = HeatingElementStatus::UNKNOWN;
-
-    int64_t _ms2ticks(int64_t time_ms) {
-        return time_ms * Board::Clock::CORE_FREQ / 1000;
-    }
-
-    int _ticks2ms(int64_t ticks) {
-        return ticks * 1000 / Board::Clock::CORE_FREQ;
-    }
-
-    void _state_start() {
-        // reset meters
-        _measure_ticks = 0;
-        _measurements_count = 0;
-        _measurements_count = 0;
-        _cpu_voltage_mv_heat = 0;
-        _supply_voltage_mv_heat = 0;
-        _pen_current_ma = 0;
-        _power_raw = 0;
-        if (_requested_power_mw < HEATING_MIN_POWER_MW) {
-            Board::adc.measure_idle_start();
-            _requested_power_mw = 0;
-            _requested_power_raw = 0;
-            _steady_ticks = 0;
-            _state = State::IDLE;
-            return;
-        }
-        // calculating derivation of requested power
-        // (for auto standby)
-        // TODO rework this code
-        _average_requested_power_short *= 2;
-        _average_requested_power_short += _requested_power_mw;
-        _average_requested_power_short /= 3;
-        _average_requested_power *= 9;
-        _average_requested_power += _requested_power_mw;
-        _average_requested_power /= 10;
-        int derivate_requested_power = _average_requested_power_short - _average_requested_power;
-        if ((derivate_requested_power > 150) || derivate_requested_power < -200) {
-            _steady_ticks = 0;
-        }
-        // enable heater
-        Board::heater.on();
-        // measure start
-        Board::adc.measure_heat_start();
-        _heating_element_status = HeatingElementStatus::UNKNOWN;
-        _state = State::HEATING;
-    }
-
-    void _state_heating(unsigned delta_ticks) {
-        _measure_ticks += delta_ticks;
-        if (!Board::adc.measure_is_done()) return;
-        _measurements_count++;
-        // cumulate measured values
-        _cpu_voltage_mv_heat += Board::adc.get_cpu_voltage();
-        _supply_voltage_mv_heat += Board::adc.get_supply_voltage();
-        _pen_current_ma += Board::adc.get_pen_current();
-        // cumulate energy
-        _power_raw += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * _measure_ticks;
-        _measure_ticks = 0;
-        // check over current
-        bool stop = (_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA;
-        // check reached power
-        stop |= _power_raw > _requested_power_raw;
-        // check reached time
-        stop |= _remaining_ticks < _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS);
-        if (stop) {
-            // disable heater
-            Board::heater.off();
-            _energy_raw += _power_raw;
-            _cpu_voltage_mv_heat /= _measurements_count;
-            _supply_voltage_mv_heat /= _measurements_count;
-            _pen_current_ma /= _measurements_count;
-            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
-            _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
-            _state = State::STABILIZE;
-            return;
-        }
-        // continue heating
-        Board::adc.measure_heat_start();
-    }
-
-    void _state_stabilize(unsigned delta_ticks) {
-        _measure_ticks += delta_ticks;
-        if (_measure_ticks < _ms2ticks(STABILIZE_TIME_MS)) return;
-        Board::adc.measure_idle_start();
-        _measure_ticks = 0;
-        _measurements_count = 0;
-        _cpu_voltage_mv_idle = 0;
-        _supply_voltage_mv_idle = 0;
-        _cpu_temperature_mc = 0;
-        _pen_temperature_mc = 0;
-        _state = State::IDLE;
-    }
-
-    void _state_idle() {
-        if (!Board::adc.measure_is_done()) return;
-        _cpu_voltage_mv_idle += Board::adc.get_cpu_voltage();
-        _supply_voltage_mv_idle += Board::adc.get_supply_voltage();
-        _cpu_temperature_mc += Board::adc.get_cpu_temperature();
-        // TODO check pen status
-        _pen_temperature_mc += Board::adc.get_pen_temperature();
-        _measurements_count++;
-        if (_remaining_ticks > 0) {
-            Board::adc.measure_idle_start();
-            return;
-        }
-        _cpu_voltage_mv_idle /= _measurements_count;
-        _supply_voltage_mv_idle /= _measurements_count;
-        _cpu_temperature_mc /= _measurements_count;
-        _pen_temperature_mc /= _measurements_count;
-        // check heating element status
-        if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
-            _heating_element_status = HeatingElementStatus::SHORTED;
-        } else if (_pen_resistance_mo < PEN_RESISTANCE_MIN) {
-            _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
-        } else if (_pen_resistance_mo > PEN_RESISTANCE_BROKEN) {
-            _heating_element_status = HeatingElementStatus::BROKEN;
-        } else if (_pen_resistance_mo > PEN_RESISTANCE_MAX) {
-            _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
-        } else {
-            _heating_element_status = HeatingElementStatus::OK;
-        }
-        _state = State::STOP;
-    }
-
-public:
     /** Start heating cycle
      *
      *  Arguments:
@@ -361,5 +192,173 @@ public:
      */
     HeatingElementStatus getHeatingElementStatus() {
         return _heating_element_status;
+    }
+
+private:
+    static const int IDLE_MIN_TIME_MS = 8;  // ms
+    static const int STABILIZE_TIME_MS = 2;  // ms
+    static const int HEATING_MIN_POWER_MW = 100;  // mW
+    static const int PEN_MAX_CURRENT_MA = 6000;  // mA
+    static const int PEN_RESISTANCE_SHORTED = 500;  // mOhm
+    static const int PEN_RESISTANCE_MIN = 1500;  // mOhm
+    static const int PEN_RESISTANCE_MAX = 2500;  // mOhm
+    static const int PEN_RESISTANCE_BROKEN = 100000;  // mOhm
+
+    int64_t _power_raw = 0;  // uW * _period_ticks
+    int64_t _requested_power_raw = 0;  // uW * _period_ticks
+    int64_t _energy_raw = 0;  // uW * CORE_FREQ
+    int64_t _steady_ticks = 0;  // ticks when power is steady
+    int _period_ms = 0;
+    int _period_ticks = 0;
+    int _remaining_ticks = 0;
+
+    int _measure_ticks = 0;
+    int _measurements_count = 0;
+
+    int _requested_power_mw = 0;  // mW
+    int _cpu_voltage_mv_heat = 0;  // mV
+    int _cpu_voltage_mv_idle = 0;  // mV
+    int _supply_voltage_mv_heat = 0;  // mV
+    int _supply_voltage_mv_idle = 0;  // mV
+    int _supply_voltage_mv_drop = 0;  // mV
+    int _pen_current_ma = 0;  // mA
+    int _pen_resistance_mo = 0;  // mOhm
+    int _pen_temperature_mc = 0;  // 1/1000 degree C
+    int _cpu_temperature_mc = 0;  // 1/1000 degree C
+
+    int _average_requested_power = 0;
+    int _average_requested_power_short = 0;
+
+    enum class State {
+        STOP,
+        START,
+        HEATING,
+        STABILIZE,
+        IDLE,
+    } _state = State::STOP;
+
+    HeatingElementStatus _heating_element_status = HeatingElementStatus::UNKNOWN;
+
+    int64_t _ms2ticks(int64_t time_ms) {
+        return time_ms * Board::Clock::CORE_FREQ / 1000;
+    }
+
+    int _ticks2ms(int64_t ticks) {
+        return ticks * 1000 / Board::Clock::CORE_FREQ;
+    }
+
+    void _state_start() {
+        // reset meters
+        _measure_ticks = 0;
+        _measurements_count = 0;
+        _measurements_count = 0;
+        _cpu_voltage_mv_heat = 0;
+        _supply_voltage_mv_heat = 0;
+        _pen_current_ma = 0;
+        _power_raw = 0;
+        if (_requested_power_mw < HEATING_MIN_POWER_MW) {
+            Board::adc.measure_idle_start();
+            _requested_power_mw = 0;
+            _requested_power_raw = 0;
+            _steady_ticks = 0;
+            _state = State::IDLE;
+            return;
+        }
+        // calculating derivation of requested power
+        // (for auto standby)
+        // TODO rework this code
+        _average_requested_power_short *= 2;
+        _average_requested_power_short += _requested_power_mw;
+        _average_requested_power_short /= 3;
+        _average_requested_power *= 9;
+        _average_requested_power += _requested_power_mw;
+        _average_requested_power /= 10;
+        int derivate_requested_power = _average_requested_power_short - _average_requested_power;
+        if ((derivate_requested_power > 150) || derivate_requested_power < -200) {
+            _steady_ticks = 0;
+        }
+        // enable heater
+        Board::heater.on();
+        // measure start
+        Board::adc.measure_heat_start();
+        _heating_element_status = HeatingElementStatus::UNKNOWN;
+        _state = State::HEATING;
+    }
+
+    void _state_heating(unsigned delta_ticks) {
+        _measure_ticks += delta_ticks;
+        if (!Board::adc.measure_is_done()) return;
+        _measurements_count++;
+        // cumulate measured values
+        _cpu_voltage_mv_heat += Board::adc.get_cpu_voltage();
+        _supply_voltage_mv_heat += Board::adc.get_supply_voltage();
+        _pen_current_ma += Board::adc.get_pen_current();
+        // cumulate energy
+        _power_raw += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * _measure_ticks;
+        _measure_ticks = 0;
+        // check over current
+        bool stop = (_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA;
+        // check reached power
+        stop |= _power_raw > _requested_power_raw;
+        // check reached time
+        stop |= _remaining_ticks < _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS);
+        if (stop) {
+            // disable heater
+            Board::heater.off();
+            _energy_raw += _power_raw;
+            _cpu_voltage_mv_heat /= _measurements_count;
+            _supply_voltage_mv_heat /= _measurements_count;
+            _pen_current_ma /= _measurements_count;
+            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
+            _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
+            _state = State::STABILIZE;
+            return;
+        }
+        // continue heating
+        Board::adc.measure_heat_start();
+    }
+
+    void _state_stabilize(unsigned delta_ticks) {
+        _measure_ticks += delta_ticks;
+        if (_measure_ticks < _ms2ticks(STABILIZE_TIME_MS)) return;
+        Board::adc.measure_idle_start();
+        _measure_ticks = 0;
+        _measurements_count = 0;
+        _cpu_voltage_mv_idle = 0;
+        _supply_voltage_mv_idle = 0;
+        _cpu_temperature_mc = 0;
+        _pen_temperature_mc = 0;
+        _state = State::IDLE;
+    }
+
+    void _state_idle() {
+        if (!Board::adc.measure_is_done()) return;
+        _cpu_voltage_mv_idle += Board::adc.get_cpu_voltage();
+        _supply_voltage_mv_idle += Board::adc.get_supply_voltage();
+        _cpu_temperature_mc += Board::adc.get_cpu_temperature();
+        // TODO check pen status
+        _pen_temperature_mc += Board::adc.get_pen_temperature();
+        _measurements_count++;
+        if (_remaining_ticks > 0) {
+            Board::adc.measure_idle_start();
+            return;
+        }
+        _cpu_voltage_mv_idle /= _measurements_count;
+        _supply_voltage_mv_idle /= _measurements_count;
+        _cpu_temperature_mc /= _measurements_count;
+        _pen_temperature_mc /= _measurements_count;
+        // check heating element status
+        if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
+            _heating_element_status = HeatingElementStatus::SHORTED;
+        } else if (_pen_resistance_mo < PEN_RESISTANCE_MIN) {
+            _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
+        } else if (_pen_resistance_mo > PEN_RESISTANCE_BROKEN) {
+            _heating_element_status = HeatingElementStatus::BROKEN;
+        } else if (_pen_resistance_mo > PEN_RESISTANCE_MAX) {
+            _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
+        } else {
+            _heating_element_status = HeatingElementStatus::OK;
+        }
+        _state = State::STOP;
     }
 };
