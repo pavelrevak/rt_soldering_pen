@@ -8,7 +8,8 @@ class Heating {
 
     static const int IDLE_MIN_TIME_MS = 8;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
-    static const int HEATING_MIN_POWER_MW = 100;  // 0.1 W
+    static const int HEATING_MIN_POWER_MW = 100;  // mW
+    static const int PEN_MAX_CURRENT_MA = 12000;  // mA
 
     int64_t _power_raw = 0;  // uW * _period_ticks
     int64_t _requested_power_raw = 0;  // uW * _period_ticks
@@ -26,20 +27,13 @@ class Heating {
     int _cpu_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_heat = 0;  // mV
     int _supply_voltage_mv_idle = 0;  // mV
+    int _supply_voltage_mv_drop = 0;  // mV
     int _pen_current_ma = 0;  // mA
     int _pen_temperature_mc = 0;  // 0.001 degree C
     int _cpu_temperature_mc = 0;  // 0.001 degree C
 
     int _average_requested_power = 0;
     int _average_requested_power_short = 0;
-
-    int64_t _ms2ticks(int64_t time_ms) {
-        return time_ms * Board::Clock::CORE_FREQ / 1000;
-    }
-
-    int _ticks2ms(int64_t ticks) {
-        return ticks * 1000 / Board::Clock::CORE_FREQ;
-    }
 
     enum class State {
         STOP,
@@ -49,13 +43,23 @@ class Heating {
         IDLE,
     } _state = State::STOP;
 
+    int64_t _ms2ticks(int64_t time_ms) {
+        return time_ms * Board::Clock::CORE_FREQ / 1000;
+    }
+
+    int _ticks2ms(int64_t ticks) {
+        return ticks * 1000 / Board::Clock::CORE_FREQ;
+    }
+
     void _state_start() {
         // reset meters
         _measure_ticks = 0;
         _measurements_count = 0;
+        _measurements_count = 0;
         _cpu_voltage_mv_heat = 0;
         _supply_voltage_mv_heat = 0;
         _pen_current_ma = 0;
+        _power_raw = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             Board::adc.measure_idle_start();
             _requested_power_mw = 0;
@@ -91,11 +95,11 @@ class Heating {
         _cpu_voltage_mv_heat += Board::adc.get_cpu_voltage();
         _supply_voltage_mv_heat += Board::adc.get_supply_voltage();
         _pen_current_ma += Board::adc.get_pen_current();
-        _measurements_count++;
         _power_raw += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * _measure_ticks;
+        _measurements_count++;
         _measure_ticks = 0;
         if (_power_raw < _requested_power_raw) {
-            if (_remaining_ticks < _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS)) {
+            if (_remaining_ticks > _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS)) {
                 Board::adc.measure_heat_start();
                 return;
             }
@@ -106,8 +110,8 @@ class Heating {
         _cpu_voltage_mv_heat /= _measurements_count;
         _supply_voltage_mv_heat /= _measurements_count;
         _pen_current_ma /= _measurements_count;
-        _measure_ticks = 0;
-        _state = State::IDLE;
+        _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
+        _state = State::STABILIZE;
     }
 
     void _state_stabilize(unsigned delta_ticks) {
@@ -123,8 +127,7 @@ class Heating {
         _state = State::IDLE;
     }
 
-    void _state_idle(unsigned delta_ticks) {
-        _measure_ticks += delta_ticks;
+    void _state_idle() {
         if (!Board::adc.measure_is_done()) return;
         _cpu_voltage_mv_idle += Board::adc.get_cpu_voltage();
         _supply_voltage_mv_idle += Board::adc.get_supply_voltage();
@@ -154,13 +157,13 @@ public:
         WRONG_RESISTANCE,
     } heating_element_status = HeatingElementStatus::UNKNOWN;
 
-    void start(const int power, const int period_time_ms) {
-        _period_ms = period_time_ms;
-        _period_ticks = period_time_ms * (Board::Clock::CORE_FREQ / 1000);
+    void start(const int power, const int period_ms) {
+        _period_ms = period_ms;
+        _period_ticks = period_ms * (Board::Clock::CORE_FREQ / 1000);
         // ignore very low requested power
         _remaining_ticks += _period_ticks;
         _requested_power_mw = power;
-        _requested_power_raw = power * 1000 * _period_ticks;
+        _requested_power_raw = (uint64_t)power * _period_ticks * 1000;
         _state = State::START;
     }
 
@@ -187,14 +190,22 @@ public:
             _state_stabilize(delta_ticks);
             return true;
         case State::IDLE:
-            _state_idle(delta_ticks);
+            _state_idle();
             return true;
         }
         return true;
     }
 
     int get_power_mw() {
-        return _power_raw / 1000 / _period_ticks;
+        return _power_raw / _period_ticks / 1000;
+    }
+
+    int get_requested_power_mw() {
+        return _requested_power_mw;
+    }
+
+    int get_pen_resistance_mo() {
+        return _supply_voltage_mv_heat * 1000 / _pen_current_ma;
     }
 
     int get_energy_mwh() {
@@ -222,7 +233,7 @@ public:
     }
 
     int get_supply_voltage_mv_drop() {
-        return _supply_voltage_mv_heat - _supply_voltage_mv_idle;
+        return _supply_voltage_mv_drop;
     }
 
     int get_cpu_temperature_mc() {

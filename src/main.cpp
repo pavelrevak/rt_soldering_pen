@@ -117,6 +117,7 @@ class MainClass {
         screen_main.set_energy(heating.get_energy_mwh());
         screen_main.set_pen_temperature(heating.get_calculated_pen_temperature_mc());
         screen_main.set_supply_voltage_idle(heating.get_supply_voltage_mv_idle());
+        screen_main.set_heating_power(heating.get_power_mw());
         int steady_ms = heating.get_steady_ms();
         screen_main.set_idle_ms(steady_ms);
         if (steady_ms > STANDBY_TIME_S * 1000) {
