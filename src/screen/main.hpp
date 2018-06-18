@@ -19,7 +19,7 @@ class Main : public Screen {
 
     bool _show_energy = true;
 
-    void preset_selected(int x, int y, bool is_on) {
+    void _preset_selected(int x, int y, bool is_on) {
         x = _fb.draw_text(x, y, is_on ? "\275" : "\274" , Font::num13);
     }
 
@@ -72,8 +72,8 @@ class Main : public Screen {
 
     void _draw_preset() {
         if (_preset.is_editing() && _edit_blink++ > 5) _edit_blink = 0;
-        if (_preset.get_selected() == 0) preset_selected(0, 0, !_preset.is_standby());
-        if (_preset.get_selected() == 1) preset_selected(0, 19, !_preset.is_standby());
+        if (_preset.get_selected() == 0) _preset_selected(0, 0, !_preset.is_standby());
+        if (_preset.get_selected() == 1) _preset_selected(0, 19, !_preset.is_standby());
         if (!_preset.is_editing(0) || _edit_blink < 5) {
             _temperature(6, 0, _preset.get_preset(0), Font::num13, Font::num7);
         }
@@ -103,7 +103,7 @@ class Main : public Screen {
                     return;  // do not show energy
                 }
                 if (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED) {
-                    _fb.draw_text(55, 0, "SHORTED RT TIP!", Font::sans8);
+                    _fb.draw_text(50, 0, "SHORTED RT TIP!", Font::sans8);
                     return;  // do not show energy
                 }
                 if (_heating.get_real_pen_temperature_mc() < 50000 || status_blink < 4) {
