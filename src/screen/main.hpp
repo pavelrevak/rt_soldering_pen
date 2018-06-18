@@ -2,6 +2,7 @@
 
 #include "lib/font.hpp"
 #include "lib/preset.hpp"
+#include "lib/heating.hpp"
 #include "screen/screen.hpp"
 
 namespace screen {
@@ -10,17 +11,13 @@ class Main : public Screen {
 
     static const int PRESET_TEMPERATURE_STEP = 10 * 1000;  //  10 degree C
     static const int ROUNDING_TEMPERATURE = 500;
+    static const int IDLE_MESSAGE_MS = 5000;
 
     Board::Display::Fb &fb = Board::display.get_fb();
     Preset &preset;
+    Heating &heating;
 
-    int pen_temperature = 0;
-    int supply_voltage_idle = 0;
-    int supply_voltage_drop = 0;
-    int heating_power = 0;
-    int energy = 0;
-    int idle_ms = 0;
-    bool _pen_ok = false;
+    bool _show_energy = true;
 
     void preset_selected(int x, int y, bool is_on) {
         x = fb.draw_text(x, y, is_on ? "\275" : "\274" , Font::num13);
@@ -56,12 +53,12 @@ class Main : public Screen {
     }
 
     /** display power in milliwatts */
-    void watt_hours(int x, int y, int watt_hours) {
+    void energy(int x, int y, int energy_mwh) {
         char tmps[20];
-        if (watt_hours < 100000) {
-            Str::d2a(watt_hours / 10, 2, 2, '\240', tmps);
+        if (energy_mwh < 100000) {
+            Str::d2a(energy_mwh / 10, 2, 2, '\240', tmps);
         } else {
-            Str::d2a(watt_hours / 100, 3, 1, '\240', tmps);
+            Str::d2a(energy_mwh / 100, 3, 1, '\240', tmps);
         }
         x = fb.draw_text(x, y, tmps, Font::num7);
         fb.draw_text(x, y, "Wh", Font::sans8);
@@ -70,7 +67,7 @@ class Main : public Screen {
     int edit_blink = 0;
 
     void draw_pen_temperature() {
-        temperature(48, 10, pen_temperature, Font::num22, Font::num9);
+        temperature(48, 10, heating.get_real_pen_temperature_mc(), Font::num22, Font::num9);
     }
 
     void draw_preset() {
@@ -86,14 +83,13 @@ class Main : public Screen {
     }
 
     void draw_power() {
-        voltage(106, 14, supply_voltage_idle);
-        if (supply_voltage_drop) {
-            voltage(100, 25, supply_voltage_drop);
+        voltage(106, 14, heating.get_supply_voltage_mv_idle());
+        if (heating.get_supply_voltage_mv_drop() < 0) {
+            voltage(100, 25, heating.get_supply_voltage_mv_drop());
         }
         if (!preset.is_standby()) {
-            watts(106, 0, heating_power);
+            watts(106, 0, heating.get_power_mw());
         }
-        watt_hours(45, 0, energy);
     }
 
     int status_blink = 0;
@@ -101,18 +97,27 @@ class Main : public Screen {
     void draw_state() {
         if (status_blink++ >= 6) status_blink = 0;
         if (preset.is_standby()) {
-            if (_pen_ok) {
-                if (pen_temperature < 50000 || status_blink < 4) {
+            if (heating.getPenSensorStatus() == Heating::PenSensorStatus::OK) {
+                if (heating.getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN) {
+                    fb.draw_text(75, 0, "BROKEN TIP", Font::sans8);
+                    return;  // do not show energy
+                }
+                if (heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED) {
+                    fb.draw_text(70, 0, "SHORTED TIP", Font::sans8);
+                    return;  // do not show energy
+                }
+                if (heating.get_real_pen_temperature_mc() < 50000 || status_blink < 4) {
                     fb.draw_text(87, 0, "STANDBY", Font::sans8);
                 }
-            } else {
+            } else if (heating.getPenSensorStatus() == Heating::PenSensorStatus::BROKEN) {
                 fb.draw_text(83, 0, "NO RT TIP", Font::sans8);
             }
-        } else if (idle_ms > 5000 && status_blink < 4) {
+        } else if (heating.get_steady_ms() > IDLE_MESSAGE_MS && status_blink < 4) {
             fb.draw_text(83, 0, "IDLE", Font::sans8);
         } else {
             status_blink = 0;
         }
+        energy(45, 0, heating.get_energy_mwh());
     }
 
     bool button_up_edit(const Button::Action action) {
@@ -154,7 +159,7 @@ class Main : public Screen {
 
 public:
 
-    Main(Preset &preset) : preset(preset) {}
+    Main(Preset &preset, Heating &heating) : preset(preset), heating(heating) {}
 
     bool button_up(const Button::Action action) {
         if (preset.is_editing()) return button_up_edit(action);
@@ -205,34 +210,6 @@ public:
                 break;
         }
         return false;
-    }
-
-    void set_pen_temperature(const int temperature) {
-        pen_temperature = temperature + ROUNDING_TEMPERATURE;
-    }
-
-    void pen_state(bool pen_ok=true) {
-        _pen_ok = pen_ok;
-    }
-
-    void set_supply_voltage_idle(const int voltage) {
-        supply_voltage_idle = voltage;
-    }
-
-    void set_supply_voltage_drop(const int voltage) {
-        supply_voltage_drop = voltage;
-    }
-
-    void set_heating_power(const int power) {
-        heating_power = power;
-    }
-
-    void set_energy(const int power) {
-        energy = power;
-    }
-
-    void set_idle_ms(const int seconds) {
-        idle_ms = seconds;
     }
 
     void redraw() {
