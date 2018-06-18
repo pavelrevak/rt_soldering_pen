@@ -9,10 +9,10 @@
 #include "board/display.hpp"
 #include "lib/str.hpp"
 #include "lib/button.hpp"
-#include "lib/preset.hpp"
 #include "lib/pid.hpp"
-#include "lib/heating.hpp"
 #include "screen/main.hpp"
+#include "heating.hpp"
+#include "preset.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
@@ -25,14 +25,11 @@ class MainClass {
     static const int PID_K_DERIVATE = 100;
     static const int HEATING_POWER_MAX = 40 * 1000;  // 20.0 W
 
-    int64_t _uptime_ticks = 0;
+    uint64_t _uptime_ticks = 0;
 
     Preset _preset;
     Heating _heating;
     Pid _pid;
-
-    screen::Main _screen_main;
-    screen::Screen *_current_screen = &_screen_main;
 
     enum class Screen {
         MAIN,
@@ -40,32 +37,35 @@ class MainClass {
         SETUP,
     } _screen = Screen::MAIN;
 
-    static const unsigned BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;
-    unsigned buttons_sample_ticks = 0;
-    Button button_up;
-    Button button_dw;
-    Button button_both;
+    screen::Main _screen_main;
+    screen::Screen *_current_screen = &_screen_main;
+
+    static const int BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;  // ticks
+    int _buttons_sample_ticks = 0;
+    Button _button_up;
+    Button _button_dw;
+    Button _button_both;
 
     void _buttons_process_fast(unsigned delta_ticks) {
-        buttons_sample_ticks += delta_ticks;
-        if (buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
-        buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
+        _buttons_sample_ticks += delta_ticks;
+        if (_buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
+        _buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
         bool btn_up = Board::buttons.is_pressed_up();
         bool btn_dw = Board::buttons.is_pressed_dw();
-        button_up.process(btn_up, btn_dw, 10);
-        button_dw.process(btn_dw, btn_up, 10);
-        button_both.process(btn_up && btn_dw, false, 10);
+        _button_up.process(btn_up, btn_dw, 10);
+        _button_dw.process(btn_dw, btn_up, 10);
+        _button_both.process(btn_up && btn_dw, false, 10);
     }
 
     void _buttons_process() {
-        Button::Action btn_up = button_up.get_status();
-        Button::Action btn_dw = button_dw.get_status();
-        Button::Action btn_both = button_both.get_status();
+        Button::Action btn_up = _button_up.get_status();
+        Button::Action btn_dw = _button_dw.get_status();
+        Button::Action btn_both = _button_both.get_status();
         switch (_screen) {
             case Screen::MAIN:
-                if (_current_screen->button_up(btn_up)) button_up.block();
-                if (_current_screen->button_dw(btn_dw)) button_dw.block();
-                if (_current_screen->button_both(btn_both)) button_both.block();
+                if (_current_screen->button_up(btn_up)) _button_up.block();
+                if (_current_screen->button_dw(btn_dw)) _button_dw.block();
+                if (_current_screen->button_both(btn_both)) _button_both.block();
                 break;
             case Screen::INFO:
                 break;

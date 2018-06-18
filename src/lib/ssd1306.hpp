@@ -35,25 +35,4 @@ public:
     static const unsigned char SETVCOMDESELECT = 0xdb;
     static const unsigned char SWITCHCAPVCC = 0x2;
 
-    // unsigned char init[] = {
-    //     DISPLAYOFF,
-    //     SETDISPLAYCLOCKDIV, 0xf0,
-    //     SETMULTIPLEX, 0x3F,
-    //     SETDISPLAYOFFSET, 0x00,
-    //     SETSTARTLINE,
-    //     SEGREMAP,
-    //     CHARGEPUMP, 0x14,
-    //     MEMORYMODE, 0x01,
-    //     SETSEGMENTREMAP,
-    //     COMSCANDEC,
-    //     SETCOMPINS, 0x12,
-    //     SETCONTRAST, 0x7f,  // 0xcf
-    //     SETPRECHARGE, 0xF1,
-    //     SETVCOMDESELECT, 0x40,
-    //     DISPLAYALLON_RESUME,
-    //     NORMALDISPLAY,
-    //     DISPLAYON,
-    //     COLUMNADDR, 0, 127,
-    //     PAGEADDR, 0, 7,
-    // };
 };
