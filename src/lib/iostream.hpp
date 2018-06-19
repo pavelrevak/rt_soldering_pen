@@ -5,6 +5,8 @@
 
 #include "iofile.hpp"
 
+namespace lib {
+
 class IStream {
 protected:
     IFile *file_in = NULL;
@@ -148,3 +150,5 @@ struct IOStream : public IStream, public OStream {
     static const char endl = '\n';
     static const char cr = '\r';
 };
+
+}

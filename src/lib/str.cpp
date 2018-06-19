@@ -1,5 +1,7 @@
 #include "str.hpp"
 
+namespace lib {
+
 char *Str::u2a(unsigned number, unsigned digits_count, const unsigned base, const bool uc, const char precedense, char *buffer) {
     unsigned modulo = 1;
     while ((number / modulo) >= base) {
@@ -41,4 +43,6 @@ char *Str::d2a(int number, unsigned digits_count, unsigned decimals_count, unsig
     buffer = u2a(number / modulo, digits_count, 10, false, precedense, buffer);
     *buffer++ = '.';
     return u2a(number % modulo, decimals_count, 10, false, '0', buffer);
+}
+
 }

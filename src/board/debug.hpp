@@ -16,7 +16,7 @@ public:
     GpioPin<io::base::GPIOA, 2> debug_tx;
 
     Usart<io::base::USART1, 0, 500> uart;
-    OStream dbg;
+    lib::OStream dbg;
 
     void init_hw() {
         output.configure_output().configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::LOW).clr();

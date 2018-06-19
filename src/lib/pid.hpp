@@ -2,6 +2,8 @@
 
 #include "board/debug.hpp"
 
+namespace lib {
+
 class Pid {
     int k_p = 0;
     int k_i = 0;
@@ -70,3 +72,5 @@ public:
     }
 
 };
+
+}

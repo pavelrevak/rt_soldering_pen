@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lib {
+
 struct IoPin {
     virtual void clr() = 0;
     virtual void set() = 0;
@@ -8,3 +10,5 @@ struct IoPin {
     virtual bool get() const = 0;
     virtual bool get_input() const = 0;
 };
+
+}

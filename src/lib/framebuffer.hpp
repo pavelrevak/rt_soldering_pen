@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <cmath>
 
+namespace lib {
+
 template <int WIDTH, int HEIGHT, typename FB_t>
 class FrameBuffer {
     union {
@@ -103,3 +105,5 @@ public:
     // inline void draw_line(int x1, int y1, int x2, int y2) {
     // }
 };
+
+}

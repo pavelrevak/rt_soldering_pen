@@ -1,5 +1,7 @@
 #pragma once
 
+namespace board {
+
 class Ssd1306 {
 public:
     static const unsigned char CO_CMD = 0x00;
@@ -36,3 +38,5 @@ public:
     static const unsigned char SWITCHCAPVCC = 0x2;
 
 };
+
+}

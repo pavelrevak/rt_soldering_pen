@@ -29,7 +29,7 @@ class MainClass {
 
     Preset _preset;
     Heating _heating;
-    Pid _pid;
+    lib::Pid _pid;
 
     enum class Screen {
         MAIN,
@@ -138,7 +138,7 @@ public:
         _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME_MS, HEATING_POWER_MAX);
         _heating_start();
 
-        board::debug.dbg << IOStream::endl;
+        board::debug.dbg << lib::IOStream::endl;
         last_ticks = board::systick.get_counter();
 
         while (true) {

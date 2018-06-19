@@ -7,8 +7,10 @@
 /** USART driver
 */
 
+namespace board {
+
 template <size_t UART_BASE, int FIFO_IN_SIZE=0, int FIFO_OUT_SIZE=0>
-class Usart : public IOFile {
+class Usart : public lib::IOFile {
 
     io::Usart &r_usart = io::USART(UART_BASE);
 
@@ -103,3 +105,5 @@ public:
     }
 
 };
+
+}

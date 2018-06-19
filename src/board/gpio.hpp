@@ -4,6 +4,8 @@
 #include "io/reg/stm32/f0/gpio.hpp"
 #include "lib/iopin.hpp"
 
+namespace board {
+
 namespace gpio {
 
 enum class Pull {
@@ -34,7 +36,7 @@ enum class Ospeed {
  * @tparam Pin number of pin on GPIO port
  */
 template <size_t Base, unsigned Pin>
-class GpioPin : public IoPin {
+class GpioPin : public lib::IoPin {
 
     io::Gpio &r_gpio = io::GPIO(Base);
 
@@ -182,3 +184,5 @@ public:
         return r_gpio.IDR.get(Pin);
     }
 };
+
+}

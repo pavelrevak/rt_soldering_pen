@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lib {
+
 class IFile {
 public:
     virtual int read_char() { return -1; }
@@ -16,3 +18,5 @@ public:
 
 class IOFile : public IFile, public OFile {
 };
+
+}

@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lib {
+
 class Font {
 public:
     static const unsigned char sans5[];
@@ -10,3 +12,5 @@ public:
     static const unsigned short num13[];
     static const unsigned int num22[];
 };
+
+}

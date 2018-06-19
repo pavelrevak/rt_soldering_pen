@@ -2,7 +2,7 @@
 
 #include "board/gpio.hpp"
 #include "board/i2c.hpp"
-#include "lib/ssd1306.hpp"
+#include "board/ssd1306.hpp"
 #include "lib/framebuffer.hpp"
 
 namespace board {
@@ -17,7 +17,7 @@ class Display {
     typedef uint32_t HEIGHT_TYPE;
 
 public:
-    typedef FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> Fb;
+    typedef lib::FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> Fb;
 
 private:
     unsigned char init_cmds[32] = {

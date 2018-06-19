@@ -2,6 +2,8 @@
 
 #include <stdlib.h>
 
+namespace lib {
+
 template <class T, int SIZE>
 class Median {
     T sorted[SIZE];
@@ -23,3 +25,5 @@ public:
         return sorted[SIZE / 2];
     }
 };
+
+}

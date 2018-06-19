@@ -1,5 +1,7 @@
 #include "font.hpp"
 
+namespace lib {
+
 const unsigned char Font::sans5[] = {
     5, 1,
     '0', 4, 0x0e, 0x11, 0x11, 0x0e,
@@ -349,3 +351,5 @@ const unsigned int Font::num22[] = {
 //     0x300000, 0x300000,
 //     0x018300, 0x018300,
 // };
+
+}
