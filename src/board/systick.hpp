@@ -7,7 +7,7 @@
  * Systick driver
  * configure systick to count tick of main oscillator
  */
-namespace Board {
+namespace board {
 
 class Systick {
     volatile uint32_t tick_counter = 0;

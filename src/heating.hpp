@@ -35,7 +35,7 @@ public:
     */
     void start(const int power, const int period_ms) {
         // assert(_state == State::STOP);
-        _period_ticks = period_ms * (Board::Clock::CORE_FREQ / 1000);
+        _period_ticks = period_ms * (board::Clock::CORE_FREQ / 1000);
         // ignore very low requested power
         _remaining_ticks += _period_ticks;
         _requested_power_mw = power;
@@ -106,7 +106,7 @@ public:
         total energy in mWh
     */
     int get_energy_mwh() {
-        return _energy_uwt / Board::Clock::CORE_FREQ / 1000 / 3600;
+        return _energy_uwt / board::Clock::CORE_FREQ / 1000 / 3600;
     }
 
     /** Getter how long is pen steady
@@ -115,7 +115,7 @@ public:
         steady time in ms
     */
     int get_steady_ms() {
-        return _steady_ticks / (Board::Clock::CORE_FREQ / 1000);
+        return _steady_ticks / (board::Clock::CORE_FREQ / 1000);
     }
 
     /** Getter for CPU voltage during heating
@@ -259,11 +259,11 @@ private:
     PenSensorStatus _pen_sensor_status = PenSensorStatus::UNKNOWN;
 
     int64_t _ms2ticks(int64_t time_ms) {
-        return time_ms * Board::Clock::CORE_FREQ / 1000;
+        return time_ms * board::Clock::CORE_FREQ / 1000;
     }
 
     int _ticks2ms(int64_t ticks) {
-        return ticks * 1000 / Board::Clock::CORE_FREQ;
+        return ticks * 1000 / board::Clock::CORE_FREQ;
     }
 
     void _state_start() {
@@ -276,7 +276,7 @@ private:
         _pen_current_ma = 0;
         _power_uwpt = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
-            Board::adc.measure_idle_start();
+            board::adc.measure_idle_start();
             _requested_power_mw = 0;
             _requested_power_uwpt = 0;
             _steady_ticks = 0;
@@ -297,9 +297,9 @@ private:
             _steady_ticks = 0;
         }
         // enable heater
-        Board::heater.on();
+        board::heater.on();
         // measure start
-        Board::adc.measure_heat_start();
+        board::adc.measure_heat_start();
         _heating_element_status = HeatingElementStatus::UNKNOWN;
         _pen_sensor_status = PenSensorStatus::UNKNOWN;
         _state = State::HEATING;
@@ -307,14 +307,14 @@ private:
 
     void _state_heating(unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
-        if (!Board::adc.measure_is_done()) return;
+        if (!board::adc.measure_is_done()) return;
         _measurements_count++;
         // cumulate measured values
-        _cpu_voltage_mv_heat += Board::adc.get_cpu_voltage();
-        _supply_voltage_mv_heat += Board::adc.get_supply_voltage();
-        _pen_current_ma += Board::adc.get_pen_current();
+        _cpu_voltage_mv_heat += board::adc.get_cpu_voltage();
+        _supply_voltage_mv_heat += board::adc.get_supply_voltage();
+        _pen_current_ma += board::adc.get_pen_current();
         // cumulate energy
-        _power_uwpt += (int64_t)Board::adc.get_supply_voltage() * Board::adc.get_pen_current() * _measure_ticks;
+        _power_uwpt += (int64_t)board::adc.get_supply_voltage() * board::adc.get_pen_current() * _measure_ticks;
         _measure_ticks = 0;
         // check over current
         bool stop = (_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA;
@@ -324,7 +324,7 @@ private:
         stop |= _remaining_ticks < _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS);
         if (stop) {
             // disable heater
-            Board::heater.off();
+            board::heater.off();
             _energy_uwt += _power_uwpt;
             _cpu_voltage_mv_heat /= _measurements_count;
             _supply_voltage_mv_heat /= _measurements_count;
@@ -347,13 +347,13 @@ private:
             return;
         }
         // continue heating
-        Board::adc.measure_heat_start();
+        board::adc.measure_heat_start();
     }
 
     void _state_stabilize(unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
         if (_measure_ticks < _ms2ticks(STABILIZE_TIME_MS)) return;
-        Board::adc.measure_idle_start();
+        board::adc.measure_idle_start();
         _measure_ticks = 0;
         _measurements_count = 0;
         _cpu_voltage_mv_idle = 0;
@@ -364,15 +364,15 @@ private:
     }
 
     void _state_idle() {
-        if (!Board::adc.measure_is_done()) return;
-        _cpu_voltage_mv_idle += Board::adc.get_cpu_voltage();
-        _supply_voltage_mv_idle += Board::adc.get_supply_voltage();
-        _cpu_temperature_mc += Board::adc.get_cpu_temperature();
+        if (!board::adc.measure_is_done()) return;
+        _cpu_voltage_mv_idle += board::adc.get_cpu_voltage();
+        _supply_voltage_mv_idle += board::adc.get_supply_voltage();
+        _cpu_temperature_mc += board::adc.get_cpu_temperature();
         // TODO check pen status
-        _pen_temperature_mc += Board::adc.get_pen_temperature();
+        _pen_temperature_mc += board::adc.get_pen_temperature();
         _measurements_count++;
         if (_remaining_ticks > 0) {
-            Board::adc.measure_idle_start();
+            board::adc.measure_idle_start();
             return;
         }
         _cpu_voltage_mv_idle /= _measurements_count;
@@ -380,7 +380,7 @@ private:
         _cpu_temperature_mc /= _measurements_count;
         _pen_temperature_mc /= _measurements_count;
         // check sensor status
-        if (Board::adc.is_pen_sensor_ok()) {
+        if (board::adc.is_pen_sensor_ok()) {
             _pen_sensor_status = PenSensorStatus::OK;
         } else {
             _pen_sensor_status = PenSensorStatus::BROKEN;

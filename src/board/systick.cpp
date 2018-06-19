@@ -1,11 +1,11 @@
 #include "board/systick.hpp"
 
-namespace Board {
+namespace board {
 
 Systick systick;
 
 }
 
 void SYSTICK_handler() {
-    Board::systick.handler();
+    board::systick.handler();
 }

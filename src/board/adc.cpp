@@ -1,6 +1,6 @@
 #include "board/adc.hpp"
 
-namespace Board {
+namespace board {
 
 Adc adc;
 

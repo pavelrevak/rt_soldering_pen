@@ -1,6 +1,6 @@
 #include "board/display.hpp"
 
-namespace Board {
+namespace board {
 
 Display display(i2c);
 

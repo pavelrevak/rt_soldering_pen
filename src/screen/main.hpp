@@ -13,7 +13,7 @@ class Main : public Screen {
     static const int ROUNDING_TEMPERATURE = 500;
     static const int IDLE_MESSAGE_MS = 5000;
 
-    Board::Display::Fb &_fb = Board::display.get_fb();
+    board::Display::Fb &_fb = board::display.get_fb();
     Preset &_preset;
     Heating &_heating;
 
@@ -120,11 +120,11 @@ class Main : public Screen {
         _energy(45, 0, _heating.get_energy_mwh());
     }
 
-    bool button_up_edit(const Button::Action action) {
+    bool button_up_edit(const lib::Button::Action action) {
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
-            case Button::Action::PRESSED_LONG:
-            case Button::Action::REPEAT:
+            case lib::Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::PRESSED_LONG:
+            case lib::Button::Action::REPEAT:
                 _preset.edit_add(PRESET_TEMPERATURE_STEP);
                 _edit_blink = 0;
             default:
@@ -133,11 +133,11 @@ class Main : public Screen {
         return false;
     }
 
-    bool button_dw_edit(const Button::Action action) {
+    bool button_dw_edit(const lib::Button::Action action) {
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
-            case Button::Action::PRESSED_LONG:
-            case Button::Action::REPEAT:
+            case lib::Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::PRESSED_LONG:
+            case lib::Button::Action::REPEAT:
                 _preset.edit_add(-PRESET_TEMPERATURE_STEP);
                 _edit_blink = 0;
             default:
@@ -146,9 +146,9 @@ class Main : public Screen {
         return false;
     }
 
-    bool button_both_edit(const Button::Action action) {
+    bool button_both_edit(const lib::Button::Action action) {
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::RELEASED_SHORT:
                 _preset.edit_end();
                 break;
             default:
@@ -161,14 +161,14 @@ public:
 
     Main(Preset &preset, Heating &heating) : _preset(preset), _heating(heating) {}
 
-    bool button_up(const Button::Action action) {
+    bool button_up(const lib::Button::Action action) {
         if (_preset.is_editing()) return button_up_edit(action);
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::RELEASED_SHORT:
                 _preset.select(0);
                 // standby_ticks = 0;
                 break;
-            case Button::Action::PRESSED_LONG:
+            case lib::Button::Action::PRESSED_LONG:
                 // edit preset 1
                 _preset.edit_select(0);
                 _edit_blink = 5;
@@ -179,14 +179,14 @@ public:
         return false;
     }
 
-    bool button_dw(const Button::Action action) {
+    bool button_dw(const lib::Button::Action action) {
         if (_preset.is_editing()) return button_dw_edit(action);
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::RELEASED_SHORT:
                 _preset.select(1);
                 // standby_ticks = 0;
                 break;
-            case Button::Action::PRESSED_LONG:
+            case lib::Button::Action::PRESSED_LONG:
                 // edit preset 2
                 _preset.edit_select(1);
                 _edit_blink = 5;
@@ -197,13 +197,13 @@ public:
         return false;
     }
 
-    bool button_both(const Button::Action action) {
+    bool button_both(const lib::Button::Action action) {
         if (_preset.is_editing()) return button_both_edit(action);
         switch (action) {
-            case Button::Action::RELEASED_SHORT:
+            case lib::Button::Action::RELEASED_SHORT:
                 _preset.set_standby();
                 break;
-            case Button::Action::PRESSED_LONG:
+            case lib::Button::Action::PRESSED_LONG:
                 // enter MENU
                 break;
             default:

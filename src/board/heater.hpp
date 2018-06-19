@@ -2,7 +2,7 @@
 
 #include "board/gpio.hpp"
 
-namespace Board {
+namespace board {
 
 class Heater {
 public:

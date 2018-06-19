@@ -1,5 +1,7 @@
 #pragma once
 
+namespace lib {
+
 class Button {
     static const unsigned LONG_DOWN_MILISECONDS = 1000;
     unsigned pressed_miliseconds = 0;
@@ -64,3 +66,5 @@ public:
         blocked = true;
     }
 };
+
+}

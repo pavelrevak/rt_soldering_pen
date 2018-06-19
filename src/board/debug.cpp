@@ -1,11 +1,11 @@
 #include "board/debug.hpp"
 
-namespace Board {
+namespace board {
 
 Debug debug;
 
 }
 
 void USART1_handler() {
-    Board::debug.uart.handler();
+    board::debug.uart.handler();
 }

@@ -12,8 +12,8 @@ class Usart : public IOFile {
 
     io::Usart &r_usart = io::USART(UART_BASE);
 
-    Fifo<char, FIFO_IN_SIZE> fifo_in;
-    Fifo<char, FIFO_OUT_SIZE> fifo_out;
+    lib::Fifo<char, FIFO_IN_SIZE> fifo_in;
+    lib::Fifo<char, FIFO_OUT_SIZE> fifo_out;
 
 public:
     ~Usart() {

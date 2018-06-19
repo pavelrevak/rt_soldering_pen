@@ -1,6 +1,6 @@
 #include "board/clock.hpp"
 
-namespace Board {
+namespace board {
 
 Clock clock;  // clock must be first
 

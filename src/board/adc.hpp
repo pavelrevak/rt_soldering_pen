@@ -7,7 +7,7 @@
 #include "io/reg/stm32/f0/sysmem.hpp"
 #include "board/gpio.hpp"
 
-namespace Board {
+namespace board {
 
 class Adc {
 private:

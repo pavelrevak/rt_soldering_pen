@@ -7,7 +7,7 @@
 #include "board/clock.hpp"
 #include "lib/iostream.hpp"
 
-namespace Board {
+namespace board {
 
 class Debug {
 public:
@@ -22,7 +22,7 @@ public:
         output.configure_output().configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::LOW).clr();
         debug_tx.configure_af(1).configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::MEDIUM);
         // USART
-        uart.set_baud_rate(115200, Board::Clock::CORE_FREQ).enable().enable_tx();
+        uart.set_baud_rate(115200, board::Clock::CORE_FREQ).enable().enable_tx();
         dbg.set_file_out(uart);
 
         // NVIC

@@ -1,6 +1,6 @@
 #include "board/heater.hpp"
 
-namespace Board {
+namespace board {
 
 Heater heater;
 

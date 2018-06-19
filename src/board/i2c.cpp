@@ -1,11 +1,11 @@
 #include "board/i2c.hpp"
 
-namespace Board {
+namespace board {
 
 I2c i2c;
 
 }
 
 void I2C1_handler() {
-    Board::i2c.handler();
+    board::i2c.handler();
 }

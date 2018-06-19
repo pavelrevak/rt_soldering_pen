@@ -5,10 +5,10 @@
 #include "lib/ssd1306.hpp"
 #include "lib/framebuffer.hpp"
 
-namespace Board {
+namespace board {
 
 class Display {
-    Board::I2c &i2c;
+    board::I2c &i2c;
 
     GpioPin<io::base::GPIOA, 15> oled_nrst;
 
@@ -55,7 +55,7 @@ public:
         return fb_cmds.fb;
     }
 
-    Display(Board::I2c &i2c) : i2c(i2c) {}
+    Display(board::I2c &i2c) : i2c(i2c) {}
 
     void init_hw() {
         oled_nrst.clr();

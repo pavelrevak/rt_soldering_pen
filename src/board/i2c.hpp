@@ -8,7 +8,7 @@
 #include "io/reg/stm32/f0/dma.hpp"
 #include "board/gpio.hpp"
 
-namespace Board {
+namespace board {
 
 class I2c {
 private:

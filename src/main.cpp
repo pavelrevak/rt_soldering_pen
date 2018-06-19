@@ -40,27 +40,27 @@ class MainClass {
     screen::Main _screen_main;
     screen::Screen *_current_screen = &_screen_main;
 
-    static const int BUTTONS_SAMPLE_TICKS = Board::Clock::CORE_FREQ / 1000 * 10;  // ticks
+    static const int BUTTONS_SAMPLE_TICKS = board::Clock::CORE_FREQ / 1000 * 10;  // ticks
     int _buttons_sample_ticks = 0;
-    Button _button_up;
-    Button _button_dw;
-    Button _button_both;
+    lib::Button _button_up;
+    lib::Button _button_dw;
+    lib::Button _button_both;
 
     void _buttons_process_fast(unsigned delta_ticks) {
         _buttons_sample_ticks += delta_ticks;
         if (_buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
         _buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
-        bool btn_up = Board::buttons.is_pressed_up();
-        bool btn_dw = Board::buttons.is_pressed_dw();
+        bool btn_up = board::buttons.is_pressed_up();
+        bool btn_dw = board::buttons.is_pressed_dw();
         _button_up.process(btn_up, btn_dw, 10);
         _button_dw.process(btn_dw, btn_up, 10);
         _button_both.process(btn_up && btn_dw, false, 10);
     }
 
     void _buttons_process() {
-        Button::Action btn_up = _button_up.get_status();
-        Button::Action btn_dw = _button_dw.get_status();
-        Button::Action btn_both = _button_both.get_status();
+        lib::Button::Action btn_up = _button_up.get_status();
+        lib::Button::Action btn_dw = _button_dw.get_status();
+        lib::Button::Action btn_both = _button_both.get_status();
         switch (_screen) {
             case Screen::MAIN:
                 if (_current_screen->button_up(btn_up)) _button_up.block();
@@ -75,8 +75,8 @@ class MainClass {
     }
 
     void _display_process() {
-        if (Board::i2c.is_busy()) return;
-        auto &fb = Board::display.get_fb();
+        if (board::i2c.is_busy()) return;
+        auto &fb = board::display.get_fb();
         fb.clear();
         switch (_screen) {
         case Screen::MAIN:
@@ -87,7 +87,7 @@ class MainClass {
         case Screen::SETUP:
             break;
         }
-        Board::display.redraw();
+        board::display.redraw();
     }
 
     void _heating_start() {
@@ -117,14 +117,14 @@ class MainClass {
     }
 
     void _init_hw() {
-        Board::clock.init_hw();
-        Board::systick.init_hw();
-        Board::debug.init_hw();
-        Board::heater.init_hw();
-        Board::buttons.init_hw();
-        Board::adc.init_hw();
-        Board::i2c.init_hw();
-        Board::display.init_hw();
+        board::clock.init_hw();
+        board::systick.init_hw();
+        board::debug.init_hw();
+        board::heater.init_hw();
+        board::buttons.init_hw();
+        board::adc.init_hw();
+        board::i2c.init_hw();
+        board::display.init_hw();
     }
 
 public:
@@ -134,17 +134,17 @@ public:
         _init_hw();
         io::Nvic::isr_enable();
 
-        Board::display.init();
+        board::display.init();
         _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME_MS, HEATING_POWER_MAX);
         _heating_start();
 
-        Board::debug.dbg << IOStream::endl;
-        last_ticks = Board::systick.get_counter();
+        board::debug.dbg << IOStream::endl;
+        last_ticks = board::systick.get_counter();
 
         while (true) {
             unsigned delta_ticks = last_ticks;
-            last_ticks = Board::systick.get_counter();
-            delta_ticks = ((1 << Board::Systick::DIV_BITS) - 1) & (delta_ticks - last_ticks);
+            last_ticks = board::systick.get_counter();
+            delta_ticks = ((1 << board::Systick::DIV_BITS) - 1) & (delta_ticks - last_ticks);
             _process(delta_ticks);
         }
     }

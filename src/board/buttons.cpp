@@ -1,6 +1,6 @@
 #include "board/buttons.hpp"
 
-namespace Board {
+namespace board {
 
 Buttons buttons;
 

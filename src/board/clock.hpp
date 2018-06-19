@@ -12,7 +12,7 @@
 #include "io/reg/stm32/f0/flash.hpp"
 #include "io/reg/stm32/f0/rcc.hpp"
 
-namespace Board {
+namespace board {
 
 class Clock {
 public:
