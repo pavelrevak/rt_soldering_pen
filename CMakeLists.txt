@@ -53,7 +53,6 @@ add_executable(${PROJECT_NAME}
     ${IO_DIR}/io/handlers/stm32/f0
     ${IO_DIR}/io/startup/stm32/f0
     src/lib/font
-    src/lib/str
     src/board/hardfault
     src/board/clock
     src/board/systick

@@ -7,7 +7,6 @@
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
 #include "board/display.hpp"
-#include "lib/str.hpp"
 #include "lib/button.hpp"
 #include "lib/pid.hpp"
 #include "screen/main.hpp"

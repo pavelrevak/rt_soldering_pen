@@ -11,8 +11,8 @@ public:
 class OFile {
 public:
     virtual void write_char(char) {}
-    virtual void write_data(const char *data, int size) {
-        while (size-- > 0) write_char(*data++);
+    virtual void write_data(const char *data, int len) {
+        while (len-- > 0) write_char(*data++);
     }
 };
 

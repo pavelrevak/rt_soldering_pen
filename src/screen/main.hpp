@@ -2,6 +2,7 @@
 
 #include "screen/screen.hpp"
 #include "lib/font.hpp"
+#include "lib/stringstream.hpp"
 #include "preset.hpp"
 #include "heating.hpp"
 
@@ -25,42 +26,50 @@ class Main : public Screen {
 
     /** display temperature in 1/1000 degree Celsius */
     template<class Tfl, class Tfs>
-    void _temperature(int x, int y, int value, const Tfl font_large, const Tfs font_small) {
-        char tmps[20];
-        lib::Str::i2a(value / 1000, 3, '\240', tmps);
-        x = _fb.draw_text(x, y, tmps, font_large);
+    void _temperature(int x, int y, int temperature, const Tfl font_large, const Tfs font_small) {
+        lib::StringStream<4> ss;
+        ss.i(temperature / 1000, 3, '\240');
+        x = _fb.draw_text(x, y, ss.get_str(), font_large);
         _fb.draw_text(x, y, "\260C", font_small);
     }
 
     /** display voltage in millivolts */
-    void _voltage(int x, int y, int voltage) {
-        char tmps[20];
-        if (voltage < 10 * 1000) {
-            lib::Str::d2a((voltage) / 10, 1, 2, '\240', tmps);
+    void _voltage_mv(int x, int y, int voltage_mv) {
+        lib::StringStream<20> ss;
+        if (voltage_mv < 10 * 1000) {
+            ss.dec(voltage_mv / 10, 1, 2, '\240');
         } else {
-            lib::Str::d2a((voltage) / 100, 1, 1, '\240', tmps);
+            ss.dec(voltage_mv / 100, 2, 1, '\240');
         }
-        x = _fb.draw_text(x, y, tmps, lib::Font::num7);
+        x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
+        _fb.draw_char(x, y, 'V', lib::Font::sans8);
+    }
+
+    /** display drop voltage in millivolts */
+    void _drop_voltage_mv(int x, int y, int voltage_mv) {
+        lib::StringStream<20> ss;
+        ss.dec(voltage_mv / 10, 2, 2, '\240');
+        x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_char(x, y, 'V', lib::Font::sans8);
     }
 
     /** display power in milliwatts */
-    void _watts(int x, int y, int watts) {
-        char tmps[20];
-        lib::Str::d2a(watts / 100, 2, 1, '\240', tmps);
-        x = _fb.draw_text(x, y, tmps, lib::Font::num7);
+    void _watts_mw(int x, int y, int watts_mw) {
+        lib::StringStream<20> ss;
+        ss.dec(watts_mw / 100, 2, 1, '\240');
+        x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_char(x, y, 'W', lib::Font::sans8);
     }
 
     /** display power in milliwatts */
     void _energy(int x, int y, int energy_mwh) {
-        char tmps[20];
+        lib::StringStream<20> ss;
         if (energy_mwh < 100000) {
-            lib::Str::d2a(energy_mwh / 10, 2, 2, '\240', tmps);
+            ss.dec(energy_mwh / 10, 2, 2, '\240');
         } else {
-            lib::Str::d2a(energy_mwh / 100, 3, 1, '\240', tmps);
+            ss.dec(energy_mwh / 100, 3, 1, '\240');
         }
-        x = _fb.draw_text(x, y, tmps, lib::Font::num7);
+        x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_text(x, y, "Wh", lib::Font::sans8);
     }
 
@@ -83,12 +92,12 @@ class Main : public Screen {
     }
 
     void _draw_power() {
-        _voltage(106, 14, _heating.get_supply_voltage_mv_idle());
+        _voltage_mv(106, 14, _heating.get_supply_voltage_mv_idle());
         if (_heating.get_supply_voltage_mv_drop() < 0) {
-            _voltage(100, 25, _heating.get_supply_voltage_mv_drop());
+            _drop_voltage_mv(101, 25, _heating.get_supply_voltage_mv_drop());
         }
         if (!_preset.is_standby()) {
-            _watts(106, 0, _heating.get_power_mw());
+            _watts_mw(106, 0, _heating.get_power_mw());
         }
     }
 

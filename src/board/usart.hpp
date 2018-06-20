@@ -44,7 +44,7 @@ public:
         return *this;
     }
 
-    void write_char(char data) {
+    void write_char(char data) override {
         if (FIFO_OUT_SIZE) {
             while (fifo_out.is_full());
             r_usart.CR1.b.TXEIE = false;
@@ -57,10 +57,6 @@ public:
             while (!r_usart.ISR.b.TXE);
         }
         r_usart.TDR.DR = data;
-    }
-
-    void write_data(const char *data, int size) {
-        while (size-- > 0) write_char(*data++);
     }
 
     int read_char() {
