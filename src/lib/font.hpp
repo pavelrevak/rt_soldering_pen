@@ -13,6 +13,28 @@ public:
     static const uint16_t num11[];
     static const uint16_t num13[];
     static const uint32_t num22[];
+
+    template <typename F>
+    int char_width(const char ch, const F *font) {
+        int spacing = font[1];
+        font += 2;
+        while (*font != ch) {
+            if (*font == 0) return 0;
+            font++;
+            font += *font + 1;
+        }
+        font++;
+        return *font + spacing;
+    }
+
+    template <typename F>
+    int text_width(const char *text, const F *font) {
+        int width = 0;
+        while (*text) {
+            width += draw_char(*text++, font);
+        }
+        return width;
+    }
 };
 
 }

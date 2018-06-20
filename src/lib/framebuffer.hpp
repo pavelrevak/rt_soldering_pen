@@ -68,7 +68,7 @@ public:
         int spacing = font[1];
         font += 2;
         while (*font != ch) {
-            if (*font == 0) return x;
+            if (*font == 0) return 0;
             font++;
             font += *font + 1;
         }
