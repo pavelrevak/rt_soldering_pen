@@ -58,6 +58,9 @@ public:
 
     Arguments:
         ch: character
+
+    Return:
+        reference to instance of this stream
     */
     OStream &c(char ch) {
         file_out->write_char(ch);
@@ -68,6 +71,9 @@ public:
 
     Arguments:
         ch: character
+
+    Return:
+        reference to instance of this stream
     */
     OStream &a(char ch) {
         if (ch == '\n') c('\r');
@@ -79,6 +85,9 @@ public:
     Arguments:
         data: data bytes
         count: number of bytes
+
+    Return:
+        reference to instance of this stream
     */
     OStream &d(const char *data, int count=1) {
         file_out->write_data(data, count);
@@ -89,6 +98,9 @@ public:
 
     Arguments:
         data: string
+
+    Return:
+        reference to instance of this stream
     */
     OStream &s(const char *data) {
         while (*data != 0) c(*data++);
@@ -100,13 +112,18 @@ public:
     Arguments:
         x: number to convert into hexadecimal number
         count: number of characters
+
+    Return:
+        reference to instance of this stream
+
     */
     template<class T>
     OStream &hex(T x, int count) {
-        // TODO remove recursive calling
-        if (--count > 0) hex(x >> 4, count);
-        x &= 0xf;
-        return c((x < 10) ? '0' + x : 'a' - 10 + x);
+        while (count-- > 0) {
+            char digit = (x >> (count << 2)) & 0x0f;
+            c((digit < 10) ? '0' + digit : 'a' - 10 + digit);
+        }
+        return *this;
     }
 
     /** Print 8-bit hexadecimal number into stream
@@ -114,6 +131,9 @@ public:
     Arguments:
         x: number to convert into hexadecimal number
         count: number of characters
+
+    Return:
+        reference to instance of this stream
     */
     OStream &h(uint8_t x, int count=2) {
         return hex(x, count);
@@ -124,6 +144,9 @@ public:
     Arguments:
         x: number to convert into hexadecimal number
         count: number of characters
+
+    Return:
+        reference to instance of this stream
     */
     OStream &h(uint16_t x, int count=4) {
         return hex(x, count);
@@ -134,6 +157,9 @@ public:
     Arguments:
         x: number to convert into hexadecimal number
         count: number of characters
+
+    Return:
+        reference to instance of this stream
     */
     OStream &h(uint32_t x, int count=8) {
         return hex(x, count);
@@ -144,9 +170,24 @@ public:
     Arguments:
         x: number to convert into hexadecimal number
         count: number of characters
+
+    Return:
+        reference to instance of this stream
     */
     OStream &h(uint64_t x, int count=16) {
         return hex(x, count);
+    }
+
+    /** Print address as hexadecimal number into stream
+
+    Arguments:
+        x: number to convert into hexadecimal number
+
+    Return:
+        reference to instance of this stream
+    */
+    OStream &h(size_t x) {
+        return hex(x, sizeof(size_t) * 2);
     }
 
     /** Print unsigned number into stream
@@ -155,6 +196,9 @@ public:
         x: number to print into stream
         count: number of digits
         pre: precedence character
+
+    Return:
+        reference to instance of this stream
     */
     template<class T>
     OStream &u(T x, int count=1, const char pre='0') {
@@ -183,6 +227,9 @@ public:
         count: number of digits
         pre: precedence character
         neg: force negative sign
+
+    Return:
+        reference to instance of this stream
     */
     template<class T>
     OStream &i(T x, int count=1, const char pre='0', bool neg=false) {
@@ -224,6 +271,9 @@ public:
         count: number of digits before decimal point
         dp: number of digits after decimal point
         pre: precedence character
+
+    Return:
+        reference to instance of this stream
     */
     template<class T>
     OStream &dec(T x, int count=1, int dp=0, const char pre='0') {
@@ -232,7 +282,7 @@ public:
             x = -x;
         }
         T modulo = 1;
-        for (int i = 0; i < dp; i++) {
+        for (int j = 0; j < dp; j++) {
             modulo *= 10;
         }
         i(x / modulo, count, pre, neg);
@@ -244,42 +294,63 @@ public:
     }
 
     /** Stream operator to print character
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(char ch) {
         return c(ch);
     }
 
     /** Stream operator to print string
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(const char *data) {
         return s(data);
     }
 
     /** Stream operator to print unsigned number
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(unsigned x) {
         return u(x);
     }
 
     /** Stream operator to print unsigned long long number
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(unsigned long long x) {
         return u(x);
     }
 
     /** Stream operator to print signed long long number
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(int x) {
         return i(x);
     }
 
     /** Stream operator to print signed long long number
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(long long x) {
         return i(x);
     }
 
     /** Stream operator boolean value
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(bool x) {
         return a(x ? '1' : '0');
@@ -287,19 +358,22 @@ public:
 
     /** stream operator to print hexadecimal pointer address
     (nonstandard feature, used for debug)
+
+    Return:
+        reference to instance of this stream
     */
     OStream &operator<<(void *x) {
-        return h((uint32_t)x);
+        return h(reinterpret_cast<size_t>(x));
     }
 
-    // OStream &operator<<(OStream &(*f)(OStream &)) {
-    //     return (*f)(*this);
-    // }
 };
 
+/** Input and output stream class
+*/
 struct IOStream : public IStream, public OStream {
     static const char endl = '\n';
     static const char cr = '\r';
+
 };
 
 }

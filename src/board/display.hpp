@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include "board/gpio.hpp"
 #include "board/i2c.hpp"
 #include "board/ssd1306.hpp"

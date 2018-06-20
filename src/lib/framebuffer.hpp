@@ -65,8 +65,6 @@ public:
 
     template <typename F>
     int draw_char(int x, int y, const char ch, const F *font) {
-        // int height = *font++;
-        // int spacing = *font++;
         int spacing = font[1];
         font += 2;
         while (*font != ch) {
@@ -82,28 +80,11 @@ public:
 
     template <typename F>
     int draw_text(int x, int y, const char *text, const F *font) {
-        // int height = *font[0];
         while (*text) {
             x += draw_char(x, y, *text++, font);
         }
         return x;
     }
-
-    // template <typename F>
-    // int draw_num(int x, int y, int num, int count, int fp, const F *font) {
-    //     if (num < 0) {
-    //         num = -num;
-    //         count--;
-    //         x += draw_char(x, y, '-', font);
-    //     }
-    //     if (count > 1 || num >= 10) x = draw_num(x, y, num / 10, count - 1, fp - 1, font);
-    //     x += draw_char(x, y, '0' + (num % 10), font);
-    //     if (fp == 0) x += draw_char(x, y, '.', font);
-    //     return x;
-    // }
-
-    // inline void draw_line(int x1, int y1, int x2, int y2) {
-    // }
 };
 
 }

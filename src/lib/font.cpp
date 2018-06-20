@@ -2,7 +2,7 @@
 
 namespace lib {
 
-const unsigned char Font::sans5[] = {
+const uint8_t Font::sans5[] = {
     5, 1,
     '0', 4, 0x0e, 0x11, 0x11, 0x0e,
     '1', 4, 0x00, 0x12, 0x1f, 0x10,
@@ -54,7 +54,7 @@ const unsigned char Font::sans5[] = {
     0,
 };
 
-const unsigned char Font::sans8[] = {
+const uint8_t Font::sans8[] = {
     8, 1,
     '0', 5, 0x3e, 0x41, 0x49, 0x41, 0x3e,
     '1', 5, 0x00, 0x42, 0x7f, 0x40, 0x00,
@@ -156,7 +156,7 @@ const unsigned char Font::sans8[] = {
     0,
 };
 
-const unsigned char Font::num7[] = {
+const uint8_t Font::num7[] = {
     7, 1,
     '0', 4, 0x3e, 0x41, 0x41, 0x3e,
     '1', 4, 0x00, 0x00, 0x00, 0x7f,
@@ -184,7 +184,7 @@ const unsigned char Font::num7[] = {
     0,
 };
 
-const unsigned short Font::num9[] = {
+const uint16_t Font::num9[] = {
     9, 2,
     '0', 5, 0x0fe, 0x101, 0x101, 0x101, 0x0fe,
     '1', 5, 0x000, 0x000, 0x000, 0x000, 0x1ff,
@@ -212,7 +212,7 @@ const unsigned short Font::num9[] = {
     0,
 };
 
-const unsigned short Font::num11[] = {
+const uint16_t Font::num11[] = {
     11, 2,
     '0', 6, 0x3fe, 0x401, 0x401, 0x401, 0x401, 0x3fe,
     '1', 6, 0x000, 0x000, 0x000, 0x000, 0x000, 0x7ff,
@@ -243,7 +243,7 @@ const unsigned short Font::num11[] = {
     0,
 };
 
-const unsigned short Font::num13[] = {
+const uint16_t Font::num13[] = {
     13, 2,
     '0', 7, 0x0ffe, 0x1001, 0x1001, 0x1001, 0x1001, 0x1001, 0x0ffe,
     '1', 7, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x1fff,
@@ -274,7 +274,7 @@ const unsigned short Font::num13[] = {
     0,
 };
 
-const unsigned int Font::num22[] = {
+const uint32_t Font::num22[] = {
     22, 3,
     '0', 11, 0x1ffffe, 0x3fffff, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x3fffff, 0x1ffffe,
     '1', 11, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x3fffff, 0x3fffff,
@@ -301,7 +301,7 @@ const unsigned int Font::num22[] = {
     0,
 };
 
-// const unsigned char Font::num22_index[] = {
+// const uint8_t Font::num22_index[] = {
 //     '0', 11,
 //     '1', 11,
 //     '2', 11,
@@ -327,7 +327,7 @@ const unsigned int Font::num22[] = {
 //     0,
 // };
 
-// const unsigned int Font::num22_data[] = {
+// const uint32_t Font::num22_data[] = {
 //     0x1ffffe, 0x3fffff, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x300003, 0x3fffff, 0x1ffffe,
 //     0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x000000, 0x3fffff, 0x3fffff,
 //     0x3ff802, 0x3ffc03, 0x300c03, 0x300c03, 0x300c03, 0x300c03, 0x300c03, 0x300c03, 0x300c03, 0x300fff, 0x3007fe,

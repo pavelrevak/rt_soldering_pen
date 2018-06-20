@@ -1,16 +1,18 @@
 #pragma once
 
+#include <cstdint>
+
 namespace lib {
 
 class Font {
 public:
-    static const unsigned char sans5[];
-    static const unsigned char sans8[];
-    static const unsigned char num7[];
-    static const unsigned short num9[];
-    static const unsigned short num11[];
-    static const unsigned short num13[];
-    static const unsigned int num22[];
+    static const uint8_t sans5[];
+    static const uint8_t sans8[];
+    static const uint8_t num7[];
+    static const uint16_t num9[];
+    static const uint16_t num11[];
+    static const uint16_t num13[];
+    static const uint32_t num22[];
 };
 
 }
