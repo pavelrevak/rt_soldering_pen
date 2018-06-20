@@ -35,7 +35,7 @@ class Main : public Screen {
 
     /** display voltage in millivolts */
     void _voltage_mv(int x, int y, int voltage_mv) {
-        lib::StringStream<20> ss;
+        lib::StringStream<5> ss;
         if (voltage_mv < 10 * 1000) {
             ss.dec(voltage_mv / 10, 1, 2, '\240');
         } else {
@@ -47,15 +47,23 @@ class Main : public Screen {
 
     /** display drop voltage in millivolts */
     void _drop_voltage_mv(int x, int y, int voltage_mv) {
-        lib::StringStream<20> ss;
+        lib::StringStream<6> ss;
         ss.dec(voltage_mv / 10, 2, 2, '\240');
         x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_char(x, y, 'V', lib::Font::sans8);
     }
 
+    /** display current in mA */
+    void _current_ma(int x, int y, int current_ma) {
+        lib::StringStream<7> ss;
+        ss.dec(current_ma, 2, 3, '\240');
+        x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
+        _fb.draw_char(x, y, 'A', lib::Font::sans8);
+    }
+
     /** display power in milliwatts */
     void _watts_mw(int x, int y, int watts_mw) {
-        lib::StringStream<20> ss;
+        lib::StringStream<5> ss;
         ss.dec(watts_mw / 100, 2, 1, '\240');
         x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_char(x, y, 'W', lib::Font::sans8);
@@ -63,7 +71,7 @@ class Main : public Screen {
 
     /** display power in milliwatts */
     void _energy(int x, int y, int energy_mwh) {
-        lib::StringStream<20> ss;
+        lib::StringStream<5> ss;
         if (energy_mwh < 100000) {
             ss.dec(energy_mwh / 10, 2, 2, '\240');
         } else {

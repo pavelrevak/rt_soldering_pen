@@ -154,6 +154,24 @@ public:
         return _supply_voltage_mv_idle;
     }
 
+    /** Getter for pen current during heat
+
+    Return:
+        pen current during heat in mA
+    */
+    int get_pen_current_ma_heat() {
+        return _pen_current_ma_heat;
+    }
+
+    /** Getter for pen current during idle
+
+    Return:
+        pen current during idle in mA
+    */
+    int get_pen_current_ma_idle() {
+        return _pen_current_ma_idle;
+    }
+
     /** Getter for supply voltage drop
 
     Return:
@@ -239,7 +257,8 @@ private:
     int _supply_voltage_mv_heat = 0;  // mV
     int _supply_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_drop = 0;  // mV
-    int _pen_current_ma = 0;  // mA
+    int _pen_current_ma_heat = 0;  // mA
+    int _pen_current_ma_idle = 0;  // mA
     int _pen_resistance_mo = 0;  // mOhm
     int _pen_temperature_mc = 0;  // 1/1000 degree C
     int _cpu_temperature_mc = 0;  // 1/1000 degree C
@@ -273,7 +292,8 @@ private:
         _measurements_count = 0;
         _cpu_voltage_mv_heat = 0;
         _supply_voltage_mv_heat = 0;
-        _pen_current_ma = 0;
+        _pen_current_ma_heat = 0;
+        _pen_current_ma_idle = 0;
         _power_uwpt = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             board::adc.measure_idle_start();
@@ -312,12 +332,12 @@ private:
         // cumulate measured values
         _cpu_voltage_mv_heat += board::adc.get_cpu_voltage();
         _supply_voltage_mv_heat += board::adc.get_supply_voltage();
-        _pen_current_ma += board::adc.get_pen_current();
+        _pen_current_ma_heat += board::adc.get_pen_current();
         // cumulate energy
         _power_uwpt += (int64_t)board::adc.get_supply_voltage() * board::adc.get_pen_current() * _measure_ticks;
         _measure_ticks = 0;
         // check over current
-        bool stop = (_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA;
+        bool stop = (_pen_current_ma_heat / _measurements_count) > PEN_MAX_CURRENT_MA;
         // check reached power
         stop |= _power_uwpt > _requested_power_uwpt;
         // check reached time
@@ -328,8 +348,12 @@ private:
             _energy_uwt += _power_uwpt;
             _cpu_voltage_mv_heat /= _measurements_count;
             _supply_voltage_mv_heat /= _measurements_count;
-            _pen_current_ma /= _measurements_count;
-            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
+            _pen_current_ma_heat /= _measurements_count;
+            // compensate pen current
+            _pen_current_ma_heat -= _pen_current_ma_idle;
+            // absolute value of pen current (will work with reversed current sensor)
+            if (_pen_current_ma_heat < 0) _pen_current_ma_heat *= -1;
+            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma_heat;
             _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
             // check heating element status
             if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
@@ -367,6 +391,7 @@ private:
         if (!board::adc.measure_is_done()) return;
         _cpu_voltage_mv_idle += board::adc.get_cpu_voltage();
         _supply_voltage_mv_idle += board::adc.get_supply_voltage();
+        _pen_current_ma_idle += board::adc.get_pen_current();
         _cpu_temperature_mc += board::adc.get_cpu_temperature();
         // TODO check pen status
         _pen_temperature_mc += board::adc.get_pen_temperature();
@@ -377,6 +402,7 @@ private:
         }
         _cpu_voltage_mv_idle /= _measurements_count;
         _supply_voltage_mv_idle /= _measurements_count;
+        _pen_current_ma_idle /= _measurements_count;
         _cpu_temperature_mc /= _measurements_count;
         _pen_temperature_mc /= _measurements_count;
         // check sensor status

@@ -21,7 +21,7 @@ private:
     GpioPin<io::base::GPIOA, 1> pen_temperature_input;
     GpioPin<io::base::GPIOA, 3> supply_voltage_input;
 
-    volatile uint16_t measured[4];
+    volatile uint16_t measured[5];
 
     void start_dma_measure(const int count) {
         // Configure DMA for ADC
@@ -50,10 +50,12 @@ private:
     static const int INDEX_HEAT_PEN_CURRENT = 0;
     static const int INDEX_HEAT_SUPPLY_VOLTAGE = 1;
     static const int INDEX_HEAT_CPU_REFERENCE = 2;
-    static const int INDEX_IDLE_PEN_TEMPERATURE = 0;
-    static const int INDEX_IDLE_SUPPLY_VOLTAGE = 1;
-    static const int INDEX_IDLE_CPU_TEMPERATURE = 2;
-    static const int INDEX_IDLE_CPU_REFERENCE = 3;
+
+    static const int INDEX_IDLE_PEN_CURRENT = 0;
+    static const int INDEX_IDLE_PEN_TEMPERATURE = 1;
+    static const int INDEX_IDLE_SUPPLY_VOLTAGE = 2;
+    static const int INDEX_IDLE_CPU_TEMPERATURE = 3;
+    static const int INDEX_IDLE_CPU_REFERENCE = 4;
 
     static const uint16_t MAX_VALUE = 0xfff0;
 
@@ -124,6 +126,7 @@ private:
         calculate_cpu_temperature(INDEX_IDLE_CPU_TEMPERATURE);
         calculate_supply_voltage(INDEX_IDLE_SUPPLY_VOLTAGE);
         calculate_pen_temperature(INDEX_IDLE_PEN_TEMPERATURE);
+        calculate_pen_current(INDEX_IDLE_PEN_CURRENT);
     }
 
     void calculate_heat() {
@@ -186,12 +189,13 @@ public:
     void measure_idle_start() {
         measure_mode = MeasureMode::IDLE;
         io::Adc::Chselr chselr(0x00000000);
+        chselr.b.CHSEL0 = true;  // pen_current
         chselr.b.CHSEL1 = true;  // pen_temperature
         chselr.b.CHSEL3 = true;  // supply_voltage
         chselr.b.CHSEL16 = true;  // cpu_temperature
         chselr.b.CHSEL17 = true;  // cpu_reference
         r_adc.CHSELR.r = chselr.r;
-        start_dma_measure(4);
+        start_dma_measure(5);
     }
 
     void measure_heat_start() {
