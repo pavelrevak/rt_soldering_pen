@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.0)
 project(rt-soldering-pen)
 
 # path to io
-set(IO_DIR "../")
+set(IO_DIR "")
 
 # select linker script
 set(LINKER_SCRIPT ${IO_DIR}io/ld/stm32/f0/3xx6.ld)
