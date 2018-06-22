@@ -43,7 +43,7 @@ class Display {
         if (_screen_holder.get()->button_both(btn_action_both)) _button_both.block();
     }
 
-    void _display_process() {
+    void _draw() {
         if (board::i2c.is_busy()) return;
         auto &fb = board::display.get_fb();
         fb.clear();
@@ -53,18 +53,18 @@ class Display {
 
 public:
 
-    Display(Preset &preset, Heating &heating) :
+    Display(Heating &heating) :
         _screen_holder(_screens),
-        _screen_main(_screen_holder, preset, heating),
-        _screen_info(_screen_holder, preset, heating) {}
+        _screen_main(_screen_holder, heating),
+        _screen_info(_screen_holder, heating) {}
 
-    void process_fast(unsigned delta_ticks) {
+    void process(unsigned delta_ticks) {
         _buttons_process_fast(delta_ticks);
     }
 
-    void process() {
+    void draw() {
         _buttons_process();
-        _display_process();
+        _draw();
     }
 
 };

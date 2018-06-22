@@ -23,6 +23,7 @@ public:
         dt = t;
         request_limit = l;
         error_i_limit = l * 1000 / k_i;
+        reset();
     }
 
     void reset() {

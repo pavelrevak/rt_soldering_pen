@@ -15,8 +15,8 @@ class Main : public Screen {
     static const int IDLE_MESSAGE_MS = 5000;
 
     board::Display::Fb &_fb = board::display.get_fb();
-    Preset &_preset;
     Heating &_heating;
+    Preset &_preset;
 
     void _preset_selected(int x, int y, bool is_on) {
         x = _fb.draw_text(x, y, is_on ? "\275" : "\274" , lib::Font::num13);
@@ -174,10 +174,10 @@ class Main : public Screen {
 
 public:
 
-    Main(ScreenHolder &screen_holder, Preset &preset, Heating &heating) :
+    Main(ScreenHolder &screen_holder, Heating &heating) :
         Screen(screen_holder),
-        _preset(preset),
-        _heating(heating) {}
+        _heating(heating),
+        _preset(heating.get_preset()) {}
 
     bool button_up(const lib::Button::Action action) override {
         if (_preset.is_editing()) return _button_up_edit(action);

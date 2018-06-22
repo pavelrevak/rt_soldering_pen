@@ -3,13 +3,35 @@
 #include "board/clock.hpp"
 #include "board/heater.hpp"
 #include "board/adc.hpp"
+#include "lib/pid.hpp"
+#include "preset.hpp"
 
 /** Class for controlling heating and measuring cycle
 */
 class Heating {
 
+    Preset _preset;
+    lib::Pid _pid;
+    uint64_t _uptime_ticks = 0;
+
 public:
+    static const int PERIOD_TIME_MS = 150;  // ms
+    static const int STANDBY_TIME_MS = 30000;  // s
     static const int PERIOD_TIME_MIN_MS = 50;  // ms
+    static const int PID_K_PROPORTIONAL = 700;
+    static const int PID_K_INTEGRAL = 200;
+    static const int PID_K_DERIVATE = 100;
+    static const int HEATING_POWER_MAX = 40 * 1000;  // 20.0 W
+
+    /** Initialize module
+    */
+    void init() {
+        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME_MS, HEATING_POWER_MAX);
+    }
+
+    Preset &get_preset() {
+        return _preset;
+    }
 
     enum class HeatingElementStatus {
         UNKNOWN,
@@ -28,18 +50,18 @@ public:
     };
 
     /** Start heating cycle
-
-    Arguments:
-        power: requested power for heating
-        period_ms: period time
     */
-    void start(const int power, const int period_ms) {
-        // assert(_state == State::STOP);
-        _period_ticks = period_ms * (board::Clock::CORE_FREQ / 1000);
-        // ignore very low requested power
+    void start() {
+        int power_mw = 0;
+        if (getPenSensorStatus() != Heating::PenSensorStatus::OK) {
+            _pid.reset();
+        } else {
+            power_mw = _pid.process(get_real_pen_temperature_mc(), _preset.get_temperature());
+        }
+        _period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
         _remaining_ticks += _period_ticks;
-        _requested_power_mw = power;
-        _requested_power_uwpt = (uint64_t)power * _period_ticks * 1000;
+        _requested_power_mw = power_mw;
+        _requested_power_uwpt = (uint64_t)power_mw * _period_ticks * 1000;
         _state = State::START;
     }
 
@@ -52,23 +74,25 @@ public:
         true during heating cycle, false in stop state
     */
     bool process(unsigned delta_ticks) {
+        _uptime_ticks += delta_ticks;
         _remaining_ticks -= delta_ticks;
         _steady_ticks += delta_ticks;
         switch (_state) {
         case State::STOP:
+            _state_stop();
             return false;
         case State::START:
             _state_start();
-            return true;
+            break;
         case State::HEATING:
             _state_heating(delta_ticks);
-            return true;
+            break;
         case State::STABILIZE:
             _state_stabilize(delta_ticks);
-            return true;
+            break;
         case State::IDLE:
             _state_idle();
-            return true;
+            break;
         }
         return true;
     }
@@ -283,6 +307,16 @@ private:
 
     int _ticks2ms(int64_t ticks) {
         return ticks * 1000 / board::Clock::CORE_FREQ;
+    }
+
+    void _state_stop() {
+        bool stop = getPenSensorStatus() != Heating::PenSensorStatus::OK;
+        stop |= getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED;
+        stop |= getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN;
+        stop |= get_steady_ms() > STANDBY_TIME_MS;
+        if (stop) {
+            _preset.set_standby();
+        }
     }
 
     void _state_start() {

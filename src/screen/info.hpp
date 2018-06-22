@@ -12,7 +12,6 @@ namespace screen {
 class Info : public Screen {
 
     board::Display::Fb &_fb = board::display.get_fb();
-    Preset &_preset;
     Heating &_heating;
 
     int scroll_position = 0;
@@ -79,9 +78,8 @@ class Info : public Screen {
 
 public:
 
-    Info(ScreenHolder &screen_holder, Preset &preset, Heating &heating) :
+    Info(ScreenHolder &screen_holder, Heating &heating) :
         Screen(screen_holder),
-        _preset(preset),
         _heating(heating) {}
 
     bool button_up(const lib::Button::Action action) override {
@@ -125,9 +123,6 @@ public:
     }
 
     void draw() override {
-        // _draw_preset();
-        // _draw_pen_temperature();
-        // _draw_power();
         _draw_state();
     }
 
