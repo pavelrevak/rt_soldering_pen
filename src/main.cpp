@@ -5,8 +5,6 @@
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
 #include "board/display.hpp"
-#include "lib/button.hpp"
-#include "screen/screen.hpp"
 #include "heating.hpp"
 #include "display.hpp"
 

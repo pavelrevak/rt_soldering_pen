@@ -4,10 +4,10 @@ cmake_minimum_required(VERSION 3.0)
 project(rt-soldering-pen)
 
 # path to io
-set(IO_DIR "..")
+set(IO_DIR "../")
 
 # select linker script
-set(LINKER_SCRIPT ${IO_DIR}/io/ld/stm32/f0/3xx6.ld)
+set(LINKER_SCRIPT ${IO_DIR}io/ld/stm32/f0/3xx6.ld)
 
 # define CPU OPTIONS
 set(CPU_OPTIONS -mthumb -mcpu=cortex-m0)
@@ -48,10 +48,10 @@ link_directories(
 
 # list of modules to build final firmware (without extension .c or .cpp)
 add_executable(${PROJECT_NAME}
-    ${IO_DIR}/io/handlers/stack
-    ${IO_DIR}/io/handlers/cortexm
-    ${IO_DIR}/io/handlers/stm32/f0
-    ${IO_DIR}/io/startup/stm32/f0
+    ${IO_DIR}io/handlers/stack
+    ${IO_DIR}io/handlers/cortexm
+    ${IO_DIR}io/handlers/stm32/f0
+    ${IO_DIR}io/startup/stm32/f0
     src/lib/font
     src/board/hardfault
     src/board/clock
