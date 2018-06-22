@@ -62,6 +62,7 @@ add_executable(${PROJECT_NAME}
     src/board/adc
     src/board/i2c
     src/board/display
+    src/meta
     src/main
 )
 

@@ -15,7 +15,7 @@ public:
     static const uint32_t num22[];
 
     template <typename F>
-    int char_width(const char ch, const F *font) {
+    static int char_width(const char ch, const F *font) {
         int spacing = font[1];
         font += 2;
         while (*font != ch) {
@@ -28,12 +28,12 @@ public:
     }
 
     template <typename F>
-    int text_width(const char *text, const F *font) {
+    static int text_width(const char *text, const F *font) {
         int width = 0;
         while (*text) {
-            width += draw_char(*text++, font);
+            width += char_width(*text++, font);
         }
-        return width;
+        return width - font[1];
     }
 };
 

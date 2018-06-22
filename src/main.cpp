@@ -37,7 +37,7 @@ class MainClass {
         if (_heating.getPenSensorStatus() != Heating::PenSensorStatus::OK) {
             _pid.reset();
         } else {
-            power_mw = _pid.process(_heating.get_real_pen_temperature_mc(), _preset.get_temperature() + 500);
+            power_mw = _pid.process(_heating.get_real_pen_temperature_mc(), _preset.get_temperature());
         }
         _heating.start(power_mw, PERIOD_TIME_MS);
     }

@@ -6,6 +6,8 @@ class Screen;
 
 enum class ScreenId {
     MAIN,
+    INFO,
+    COUNT,
 };
 
 class ScreenHolder {

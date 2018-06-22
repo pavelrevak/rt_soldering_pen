@@ -82,7 +82,7 @@ class Main : public Screen {
     int _edit_blink = 0;
 
     void _draw_pen_temperature() {
-        _temperature(48, 10, _heating.get_real_pen_temperature_mc(), lib::Font::num22, lib::Font::num9);
+        _temperature(48, 10, _heating.get_real_pen_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
     }
 
     void _draw_preset() {
@@ -222,7 +222,8 @@ public:
                 _preset.set_standby();
                 break;
             case lib::Button::Action::PRESSED_LONG:
-                break;
+                change_screen(ScreenId::INFO);
+                return true;
             default:
                 break;
         }

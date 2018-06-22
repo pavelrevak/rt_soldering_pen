@@ -353,7 +353,11 @@ private:
             _pen_current_ma_heat -= _pen_current_ma_idle;
             // absolute value of pen current (will work with reversed current sensor)
             if (_pen_current_ma_heat < 0) _pen_current_ma_heat *= -1;
-            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma_heat;
+            if (_pen_current_ma_heat > 10) {
+                _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma_heat;
+            } else {
+                _pen_resistance_mo = 1000000000;
+            }
             _supply_voltage_mv_drop = _supply_voltage_mv_heat - _supply_voltage_mv_idle;
             // check heating element status
             if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
