@@ -18,8 +18,6 @@ class Main : public Screen {
     Preset &_preset;
     Heating &_heating;
 
-    bool _show_energy = true;
-
     void _preset_selected(int x, int y, bool is_on) {
         x = _fb.draw_text(x, y, is_on ? "\275" : "\274" , lib::Font::num13);
     }
@@ -137,7 +135,7 @@ class Main : public Screen {
         _energy(45, 0, _heating.get_energy_mwh());
     }
 
-    bool button_up_edit(const lib::Button::Action action) {
+    bool _button_up_edit(const lib::Button::Action action) {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
             case lib::Button::Action::PRESSED_LONG:
@@ -150,7 +148,7 @@ class Main : public Screen {
         return false;
     }
 
-    bool button_dw_edit(const lib::Button::Action action) {
+    bool _button_dw_edit(const lib::Button::Action action) {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
             case lib::Button::Action::PRESSED_LONG:
@@ -163,7 +161,7 @@ class Main : public Screen {
         return false;
     }
 
-    bool button_both_edit(const lib::Button::Action action) {
+    bool _button_both_edit(const lib::Button::Action action) {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
                 _preset.edit_end();
@@ -176,10 +174,13 @@ class Main : public Screen {
 
 public:
 
-    Main(Preset &preset, Heating &heating) : _preset(preset), _heating(heating) {}
+    Main(ScreenHolder &screen_holder, Preset &preset, Heating &heating) :
+        Screen(screen_holder),
+        _preset(preset),
+        _heating(heating) {}
 
-    bool button_up(const lib::Button::Action action) {
-        if (_preset.is_editing()) return button_up_edit(action);
+    bool button_up(const lib::Button::Action action) override {
+        if (_preset.is_editing()) return _button_up_edit(action);
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
                 _preset.select(0);
@@ -196,8 +197,8 @@ public:
         return false;
     }
 
-    bool button_dw(const lib::Button::Action action) {
-        if (_preset.is_editing()) return button_dw_edit(action);
+    bool button_dw(const lib::Button::Action action) override {
+        if (_preset.is_editing()) return _button_dw_edit(action);
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
                 _preset.select(1);
@@ -214,14 +215,13 @@ public:
         return false;
     }
 
-    bool button_both(const lib::Button::Action action) {
-        if (_preset.is_editing()) return button_both_edit(action);
+    bool button_both(const lib::Button::Action action) override {
+        if (_preset.is_editing()) return _button_both_edit(action);
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
                 _preset.set_standby();
                 break;
             case lib::Button::Action::PRESSED_LONG:
-                // enter MENU
                 break;
             default:
                 break;
@@ -229,7 +229,7 @@ public:
         return false;
     }
 
-    void redraw() {
+    void draw() override {
         _draw_preset();
         _draw_pen_temperature();
         _draw_power();

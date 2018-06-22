@@ -9,9 +9,10 @@
 #include "board/display.hpp"
 #include "lib/button.hpp"
 #include "lib/pid.hpp"
-#include "screen/main.hpp"
+#include "screen/screen.hpp"
 #include "heating.hpp"
 #include "preset.hpp"
+#include "display.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
@@ -29,65 +30,7 @@ class MainClass {
     Preset _preset;
     Heating _heating;
     lib::Pid _pid;
-
-    enum class Screen {
-        MAIN,
-        INFO,
-        SETUP,
-    } _screen = Screen::MAIN;
-
-    screen::Main _screen_main;
-    screen::Screen *_current_screen = &_screen_main;
-
-    static const int BUTTONS_SAMPLE_TICKS = board::Clock::CORE_FREQ / 1000 * 10;  // ticks
-    int _buttons_sample_ticks = 0;
-    lib::Button _button_up;
-    lib::Button _button_dw;
-    lib::Button _button_both;
-
-    void _buttons_process_fast(unsigned delta_ticks) {
-        _buttons_sample_ticks += delta_ticks;
-        if (_buttons_sample_ticks < BUTTONS_SAMPLE_TICKS) return;
-        _buttons_sample_ticks -= BUTTONS_SAMPLE_TICKS;
-        bool btn_up = board::buttons.is_pressed_up();
-        bool btn_dw = board::buttons.is_pressed_dw();
-        _button_up.process(btn_up, btn_dw, 10);
-        _button_dw.process(btn_dw, btn_up, 10);
-        _button_both.process(btn_up && btn_dw, false, 10);
-    }
-
-    void _buttons_process() {
-        lib::Button::Action btn_up = _button_up.get_status();
-        lib::Button::Action btn_dw = _button_dw.get_status();
-        lib::Button::Action btn_both = _button_both.get_status();
-        switch (_screen) {
-            case Screen::MAIN:
-                if (_current_screen->button_up(btn_up)) _button_up.block();
-                if (_current_screen->button_dw(btn_dw)) _button_dw.block();
-                if (_current_screen->button_both(btn_both)) _button_both.block();
-                break;
-            case Screen::INFO:
-                break;
-            case Screen::SETUP:
-                break;
-        }
-    }
-
-    void _display_process() {
-        if (board::i2c.is_busy()) return;
-        auto &fb = board::display.get_fb();
-        fb.clear();
-        switch (_screen) {
-        case Screen::MAIN:
-            _current_screen->redraw();
-            break;
-        case Screen::INFO:
-            break;
-        case Screen::SETUP:
-            break;
-        }
-        board::display.redraw();
-    }
+    Display _display;
 
     void _heating_start() {
         int power_mw = 0;
@@ -101,7 +44,7 @@ class MainClass {
 
     void _process(unsigned delta_ticks) {
         _uptime_ticks += delta_ticks;
-        _buttons_process_fast(delta_ticks);
+        _display.process_fast(delta_ticks);
         if (_heating.process(delta_ticks)) return;
         bool stop = _heating.getPenSensorStatus() != Heating::PenSensorStatus::OK;
         stop |= _heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED;
@@ -110,8 +53,7 @@ class MainClass {
         if (stop) {
             _preset.set_standby();
         }
-        _buttons_process();
-        _display_process();
+        _display.process();
         _heating_start();
     }
 
@@ -127,7 +69,7 @@ class MainClass {
     }
 
 public:
-    MainClass() : _screen_main(_preset, _heating) {}
+    MainClass() : _display(_preset, _heating) {}
 
     void run() {
         _init_hw();

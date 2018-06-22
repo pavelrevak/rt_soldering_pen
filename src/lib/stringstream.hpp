@@ -47,8 +47,9 @@ class StringStream : public OStream {
 public:
     StringStream() : OStream(str_file) {}
 
-    void reset() {
+    StringStream &reset() {
         str_file.reset();
+        return *this;
     }
 
     char *get_str() {
