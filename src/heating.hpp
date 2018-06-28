@@ -364,11 +364,11 @@ private:
         if (!board::adc.measure_is_done()) return;
         _measurements_count++;
         // cumulate measured values
-        _cpu_voltage_mv_heat += board::adc.get_cpu_voltage();
-        _supply_voltage_mv_heat += board::adc.get_supply_voltage();
-        _pen_current_ma_heat += board::adc.get_pen_current();
+        _cpu_voltage_mv_heat += board::adc.get_cpu_voltage_mv();
+        _supply_voltage_mv_heat += board::adc.get_supply_voltage_mv();
+        _pen_current_ma_heat += board::adc.get_pen_current_ma();
         // cumulate energy
-        _power_uwpt += (int64_t)board::adc.get_supply_voltage() * board::adc.get_pen_current() * _measure_ticks;
+        _power_uwpt += (int64_t)board::adc.get_supply_voltage_mv() * board::adc.get_pen_current_ma() * _measure_ticks;
         _measure_ticks = 0;
         // check over current
         bool stop = (_pen_current_ma_heat / _measurements_count) > PEN_MAX_CURRENT_MA;
@@ -427,12 +427,12 @@ private:
 
     void _state_idle() {
         if (!board::adc.measure_is_done()) return;
-        _cpu_voltage_mv_idle += board::adc.get_cpu_voltage();
-        _supply_voltage_mv_idle += board::adc.get_supply_voltage();
-        _pen_current_ma_idle += board::adc.get_pen_current();
-        _cpu_temperature_mc += board::adc.get_cpu_temperature();
+        _cpu_voltage_mv_idle += board::adc.get_cpu_voltage_mv();
+        _supply_voltage_mv_idle += board::adc.get_supply_voltage_mv();
+        _pen_current_ma_idle += board::adc.get_pen_current_ma();
+        _cpu_temperature_mc += board::adc.get_cpu_temperature_mc();
         // TODO check pen status
-        _pen_temperature_mc += board::adc.get_pen_temperature();
+        _pen_temperature_mc += board::adc.get_pen_temperature_mc();
         _measurements_count++;
         if (_remaining_ticks > 0) {
             board::adc.measure_idle_start();

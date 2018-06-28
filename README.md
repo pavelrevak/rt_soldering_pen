@@ -1,5 +1,9 @@
 # RT soldering pen
 
+This firmware is for my project [RT soldering pen](https://hackaday.io/project/18899-rt-soldering-pen)
+
+You can buy HW at [Tindie](https://www.tindie.com/products/vlk/rt-soldering-pen/)
+
 ## Building and flashing
 
 ### Requirements
@@ -49,4 +53,4 @@ make srec
 
 or building also support other targets `hex` and `bin`
 
-Final files you can find in `_build` folder
+Final files are saved in `_build` folder
