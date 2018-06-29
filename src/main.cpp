@@ -16,9 +16,10 @@ class MainClass {
 
     void _process(unsigned delta_ticks) {
         _display.process(delta_ticks);
-        if (_heating.process(delta_ticks)) return;
-        _display.draw();
-        _heating.start();
+        if (_heating.process(delta_ticks) == Heating::State::STOP) {
+            _display.draw();
+            _heating.start();
+        }
     }
 
     void _init_hw() {

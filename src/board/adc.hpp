@@ -10,7 +10,17 @@
 namespace board {
 
 class Adc {
+
+public:
+
+    enum class State {
+        DONE,
+        MEASURE_IDLE,
+        MEASURE_HEAT,
+    } _measure_state = State::DONE;
+
 private:
+
     static const unsigned DMA_CH_ADC = 1;
 
     io::Adc &r_adc = io::ADC;
@@ -29,19 +39,19 @@ private:
         uint16_t supply_voltage;
         uint16_t cpu_temperature;
         uint16_t cpu_reference;
-    } raw_measured_idle;
+    } _raw_measured_idle;
 
-    static const int RAW_MEASURE_IDLE_ITEMS = sizeof(RawMeasuredIdle) / sizeof(uint16_t);
+    static constexpr int RAW_MEASURE_IDLE_ITEMS = sizeof(RawMeasuredIdle) / sizeof(uint16_t);
 
     struct RawMeasuredHeat : public RawMeasured {
         uint16_t pen_current;
         uint16_t supply_voltage;
         uint16_t cpu_reference;
-    } raw_measured_heat;
+    } _raw_measured_heat;
 
-    static const int RAW_MEASURE_HEAT_ITEMS = sizeof(RawMeasuredHeat) / sizeof(uint16_t);
+    static constexpr int RAW_MEASURE_HEAT_ITEMS = sizeof(RawMeasuredHeat) / sizeof(uint16_t);
 
-    void start_dma_measure(RawMeasured &raw_measured, const int count) {
+    void _start_dma_measure(RawMeasured &raw_measured, const int count) {
         // Configure DMA for ADC
         r_dma.IFCR.clear_flags(DMA_CH_ADC);
         r_dma_adc.CCR.r = 0x00000000;
@@ -59,84 +69,98 @@ private:
         r_adc.CR.b.ADSTART = true;
     }
 
-    enum class MeasureMode {
-        NONE,
-        IDLE,
-        HEAT,
-    } measure_mode = MeasureMode::NONE;
-
     static const uint16_t MAX_VALUE = 0xfff0;
 
-    int actual_cpu_voltage_mv = 0;
-    int actual_supply_voltage_mv = 0;
-    int actual_cpu_temperature_mc = 0;
-    int actual_pen_temperature_mc = 0;
-    int actual_pen_current_ma = 0;
-    bool pen_sensor_ok = false;
+    int _actual_cpu_voltage_mv = 0;
+    int _actual_supply_voltage_mv = 0;
+    int _actual_cpu_temperature_mc = 0;
+    int _actual_pen_temperature_mc = 0;
+    int _actual_pen_current_ma = 0;
+    bool _pen_sensor_ok = false;
 
-    void calculate_cpu_voltage(const uint16_t raw_cpu_reference) {
+    void _calculate_cpu_voltage(const uint16_t raw_cpu_reference) {
         int tmp = (io::SYSMEM.VREFINT_CAL << 4) * 3300;
         tmp /= raw_cpu_reference;
-        actual_cpu_voltage_mv = tmp;
+        _actual_cpu_voltage_mv = tmp;
     }
 
-    void calculate_cpu_temperature(const uint16_t raw_cpu_temperature) {
+    void _calculate_cpu_temperature(const uint16_t raw_cpu_temperature) {
         int tmp = raw_cpu_temperature;
-        tmp *= actual_cpu_voltage_mv;
+        tmp *= _actual_cpu_voltage_mv;
         tmp /= 3300;
         tmp -= (io::SYSMEM.TEMP30_CAL << 4);
         tmp *= 110 * 1000 - 30 * 1000;
         tmp /= (io::SYSMEM.TEMP110_CAL << 4) - (io::SYSMEM.TEMP30_CAL << 4);
         tmp += 30 * 1000;
-        actual_cpu_temperature_mc = tmp;
+        _actual_cpu_temperature_mc = tmp;
     }
 
-    void calculate_supply_voltage(const uint16_t raw_supply_voltage) {
+    void _calculate_supply_voltage(const uint16_t raw_supply_voltage) {
         int tmp = raw_supply_voltage;
-        tmp *= actual_cpu_voltage_mv;
+        tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 68 + 10;  // divider with 68 and 10 kOhm
         tmp /= 10;
-        actual_supply_voltage_mv = tmp;
+        _actual_supply_voltage_mv = tmp;
     }
 
-    void calculate_pen_temperature(const uint16_t raw_pen_temperature) {
+    void _calculate_pen_temperature(const uint16_t raw_pen_temperature) {
         int tmp = raw_pen_temperature;
-        pen_sensor_ok = tmp <= 65000;
-        if (!pen_sensor_ok) {
-            actual_pen_temperature_mc = 0;
+        _pen_sensor_ok = tmp <= 65000;
+        if (!_pen_sensor_ok) {
+            _actual_pen_temperature_mc = 0;
             return;
         }
-        tmp *= actual_cpu_voltage_mv;
+        tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
-        tmp *= 500 * 1000;  // 500 degrees at 3mV
+        tmp *= 500 * 1000;  // 500 degrees at 3V
         tmp /= 3000;
-        actual_pen_temperature_mc = tmp;
+        _actual_pen_temperature_mc = tmp;
     }
 
-    void calculate_pen_current(const uint16_t raw_pen_current) {
+    void _calculate_pen_current(const uint16_t raw_pen_current) {
         int tmp = raw_pen_current;
         tmp -= MAX_VALUE / 2;
-        tmp *= actual_cpu_voltage_mv;
+        tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 1000;  // mA
         tmp /= 110;  // 110 mV / A
-        if (tmp < 0) tmp = -tmp;
-        actual_pen_current_ma = tmp;
+        _actual_pen_current_ma = tmp;
     }
 
-    void calculate_idle() {
-        calculate_cpu_voltage(raw_measured_idle.cpu_reference);
-        calculate_cpu_temperature(raw_measured_idle.cpu_temperature);
-        calculate_supply_voltage(raw_measured_idle.supply_voltage);
-        calculate_pen_temperature(raw_measured_idle.pen_temperature);
-        calculate_pen_current(raw_measured_idle.pen_current);
+    void _calculate_idle() {
+        _calculate_cpu_voltage(_raw_measured_idle.cpu_reference);
+        _calculate_cpu_temperature(_raw_measured_idle.cpu_temperature);
+        _calculate_supply_voltage(_raw_measured_idle.supply_voltage);
+        _calculate_pen_temperature(_raw_measured_idle.pen_temperature);
+        _calculate_pen_current(_raw_measured_idle.pen_current);
     }
 
-    void calculate_heat() {
-        calculate_cpu_voltage(raw_measured_heat.cpu_reference);
-        calculate_supply_voltage(raw_measured_heat.supply_voltage);
-        calculate_pen_current(raw_measured_heat.pen_current);
+    void _calculate_heat() {
+        _calculate_cpu_voltage(_raw_measured_heat.cpu_reference);
+        _calculate_supply_voltage(_raw_measured_heat.supply_voltage);
+        _calculate_pen_current(_raw_measured_heat.pen_current);
+    }
+
+    void _process_measure() {
+        if (r_dma.ISR.TCIF(DMA_CH_ADC)) {
+            r_dma.IFCR.clear_flags(DMA_CH_ADC);
+            _measure_state = State::DONE;
+        }
+    }
+
+    void _process_idle() {
+        _process_measure();
+        if (_measure_state == State::DONE) {
+            _calculate_idle();
+        }
+    }
+
+    void _process_heat() {
+        _process_measure();
+        if (_measure_state == State::DONE) {
+            _calculate_heat();
+        }
     }
 
 public:
@@ -147,7 +171,7 @@ public:
         CPU voltage in mV
     */
     inline int get_cpu_voltage_mv() {
-        return actual_cpu_voltage_mv;
+        return _actual_cpu_voltage_mv;
     }
 
     /** Last measured supply voltage
@@ -156,7 +180,7 @@ public:
         supply voltage in mV
     */
     inline int get_supply_voltage_mv() {
-        return actual_supply_voltage_mv;
+        return _actual_supply_voltage_mv;
     }
 
     /** Last measured CPU temperature
@@ -165,7 +189,7 @@ public:
         CPU temperature in 1/1000 degree Celsius
     */
     inline int get_cpu_temperature_mc() {
-        return actual_cpu_temperature_mc;
+        return _actual_cpu_temperature_mc;
     }
 
     /** Last measured pen sensor temperature
@@ -174,7 +198,7 @@ public:
         CPU temperature in 1/1000 degree Celsius
     */
     inline int get_pen_temperature_mc() {
-        return actual_pen_temperature_mc;
+        return _actual_pen_temperature_mc;
     }
 
     /** Last measured pen current
@@ -183,7 +207,7 @@ public:
         pen current in mA
     */
     inline int get_pen_current_ma() {
-        return actual_pen_current_ma;
+        return _actual_pen_current_ma;
     }
 
     /** Last state of pen temperature sensor
@@ -192,7 +216,7 @@ public:
         true if is OK
     */
     inline bool is_pen_sensor_ok() {
-        return pen_sensor_ok;
+        return _pen_sensor_ok;
     }
 
     /** HW initialization
@@ -225,7 +249,7 @@ public:
     /** Start measure during idle
     */
     void measure_idle_start() {
-        measure_mode = MeasureMode::IDLE;
+        _measure_state = State::MEASURE_IDLE;
         io::Adc::Chselr chselr(0x00000000);
         chselr.b.CHSEL0 = true;  // pen_current
         chselr.b.CHSEL1 = true;  // pen_temperature
@@ -233,36 +257,40 @@ public:
         chselr.b.CHSEL16 = true;  // cpu_temperature
         chselr.b.CHSEL17 = true;  // cpu_reference
         r_adc.CHSELR.r = chselr.r;
-        start_dma_measure(raw_measured_idle, RAW_MEASURE_IDLE_ITEMS);
+        _start_dma_measure(_raw_measured_idle, RAW_MEASURE_IDLE_ITEMS);
     }
 
     /** Start measure during heating
     */
     void measure_heat_start() {
-        measure_mode = MeasureMode::HEAT;
+        _measure_state = State::MEASURE_HEAT;
         io::Adc::Chselr chselr(0x00000000);
         chselr.b.CHSEL0 = true;  // pen_current
         chselr.b.CHSEL3 = true;  // supply_voltage
         chselr.b.CHSEL17 = true;  // cpu_reference
         r_adc.CHSELR.r = chselr.r;
-        start_dma_measure(raw_measured_heat, RAW_MEASURE_HEAT_ITEMS);
+        _start_dma_measure(_raw_measured_heat, RAW_MEASURE_HEAT_ITEMS);
     }
 
-    /** Check if measurement is done
+    /** process measurement
+
+    This method is used also for waiting when measurement is DONE
 
     Return:
-        true if measurement is done
+        actual State
     */
-    bool measure_is_done() {
-        if (!r_dma.ISR.TCIF(DMA_CH_ADC)) return false;
-        r_dma.IFCR.clear_flags(DMA_CH_ADC);
-        switch (measure_mode) {
-            case MeasureMode::NONE: return false;
-            case MeasureMode::IDLE: calculate_idle(); break;
-            case MeasureMode::HEAT: calculate_heat(); break;
+    State process() {
+        switch (_measure_state) {
+        case State::MEASURE_IDLE:
+            _process_idle();
+            break;
+        case State::MEASURE_HEAT:
+            _process_heat();
+            break;
+        case State::DONE:
+            break;
         }
-        measure_mode = MeasureMode::NONE;
-        return true;
+        return _measure_state;
     }
 };
 

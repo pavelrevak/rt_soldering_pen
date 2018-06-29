@@ -33,6 +33,14 @@ public:
         return _preset;
     }
 
+    enum class State {
+        STOP,
+        START,
+        HEATING,
+        STABILIZE,
+        IDLE,
+    } _state = State::STOP;
+
     enum class HeatingElementStatus {
         UNKNOWN,
         OK,
@@ -67,20 +75,23 @@ public:
 
     /** Process state machine
 
+    Main application always wait for state STOP,
+    after STOP can be heating cycle started again,
+    but manually by calling start()
+
     Arguments:
         delta_ticks: number of ticks between each process call
 
     Return:
-        true during heating cycle, false in stop state
+        actual state of heating cycle
     */
-    bool process(unsigned delta_ticks) {
+    State process(unsigned delta_ticks) {
         _uptime_ticks += delta_ticks;
         _remaining_ticks -= delta_ticks;
         _steady_ticks += delta_ticks;
         switch (_state) {
         case State::STOP:
-            _state_stop();
-            return false;
+            break;
         case State::START:
             _state_start();
             break;
@@ -94,7 +105,7 @@ public:
             _state_idle();
             break;
         }
-        return true;
+        return _state;
     }
 
     /** Getter for actual power
@@ -290,14 +301,6 @@ private:
     int _average_requested_power = 0;
     int _average_requested_power_short = 0;
 
-    enum class State {
-        STOP,
-        START,
-        HEATING,
-        STABILIZE,
-        IDLE,
-    } _state = State::STOP;
-
     HeatingElementStatus _heating_element_status = HeatingElementStatus::UNKNOWN;
     PenSensorStatus _pen_sensor_status = PenSensorStatus::UNKNOWN;
 
@@ -361,7 +364,7 @@ private:
 
     void _state_heating(unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
-        if (!board::adc.measure_is_done()) return;
+        if (board::adc.process() != board::Adc::State::DONE) return;
         _measurements_count++;
         // cumulate measured values
         _cpu_voltage_mv_heat += board::adc.get_cpu_voltage_mv();
@@ -426,7 +429,7 @@ private:
     }
 
     void _state_idle() {
-        if (!board::adc.measure_is_done()) return;
+        if (board::adc.process() != board::Adc::State::DONE) return;
         _cpu_voltage_mv_idle += board::adc.get_cpu_voltage_mv();
         _supply_voltage_mv_idle += board::adc.get_supply_voltage_mv();
         _pen_current_ma_idle += board::adc.get_pen_current_ma();
@@ -450,6 +453,7 @@ private:
             _pen_sensor_status = PenSensorStatus::BROKEN;
             _heating_element_status = HeatingElementStatus::UNKNOWN;
         }
+        _state_stop();
         _state = State::STOP;
     }
 };
