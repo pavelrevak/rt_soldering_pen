@@ -22,6 +22,7 @@ public:
 private:
 
     static const unsigned DMA_CH_ADC = 1;
+    static const uint16_t MAX_VALUE = 0xfff0;
 
     io::Adc &r_adc = io::ADC;
     io::Dma &r_dma = io::DMA1;
@@ -51,6 +52,13 @@ private:
 
     static constexpr int RAW_MEASURE_HEAT_ITEMS = sizeof(RawMeasuredHeat) / sizeof(uint16_t);
 
+    int _actual_cpu_voltage_mv = 0;
+    int _actual_supply_voltage_mv = 0;
+    int _actual_cpu_temperature_mc = 0;
+    int _actual_pen_temperature_mc = 0;
+    int _actual_pen_current_ma = 0;
+    bool _pen_sensor_ok = false;
+
     void _start_dma_measure(RawMeasured &raw_measured, const int count) {
         // Configure DMA for ADC
         r_dma.IFCR.clear_flags(DMA_CH_ADC);
@@ -68,15 +76,6 @@ private:
         // start ADC
         r_adc.CR.b.ADSTART = true;
     }
-
-    static const uint16_t MAX_VALUE = 0xfff0;
-
-    int _actual_cpu_voltage_mv = 0;
-    int _actual_supply_voltage_mv = 0;
-    int _actual_cpu_temperature_mc = 0;
-    int _actual_pen_temperature_mc = 0;
-    int _actual_pen_current_ma = 0;
-    bool _pen_sensor_ok = false;
 
     void _calculate_cpu_voltage(const uint16_t raw_cpu_reference) {
         int tmp = (io::SYSMEM.VREFINT_CAL << 4) * 3300;
