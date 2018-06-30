@@ -13,35 +13,17 @@ class Display {
 
     GpioPin<io::base::GPIOA, 15> oled_nrst;
 
-    static const int DISPLAY_WIDTH = 128;
-    static const int DISPLAY_HEIGHT = 32;
     typedef uint32_t HEIGHT_TYPE;
 
 public:
+    static const int DISPLAY_WIDTH = 128;
+    static const int DISPLAY_HEIGHT = 32;
+
     typedef lib::FrameBuffer<DISPLAY_WIDTH, DISPLAY_HEIGHT, HEIGHT_TYPE> Fb;
 
 private:
-    unsigned char init_cmds[32] = {
-        Ssd1306::CO_CMD,
-        Ssd1306::DISPLAYOFF,
-        Ssd1306::SETDISPLAYCLOCKDIV, 0xf0,
-        Ssd1306::SETMULTIPLEX, (unsigned char)(DISPLAY_HEIGHT - 1),
-        Ssd1306::SETDISPLAYOFFSET, 0x00,
-        Ssd1306::SETSTARTLINE,
-        Ssd1306::SETSEGMENTREMAP,
-        Ssd1306::CHARGEPUMP, 0x14,
-        Ssd1306::MEMORYMODE, 0x01,
-        Ssd1306::COMSCANDEC,
-        Ssd1306::SETCOMPINS, 0x02,
-        Ssd1306::SETCONTRAST, 0x22,  // 0xcf
-        Ssd1306::SETPRECHARGE, 0x00,
-        Ssd1306::SETVCOMDESELECT, 0x40,
-        Ssd1306::DISPLAYALLON_RESUME,
-        Ssd1306::NORMALDISPLAY,
-        Ssd1306::COLUMNADDR, 0, (unsigned char)(DISPLAY_WIDTH - 1),
-        Ssd1306::PAGEADDR, 0, (unsigned char)(DISPLAY_HEIGHT / 8 - 1),
-        Ssd1306::DISPLAYON,
-    };
+
+    static const uint8_t init_cmds[32];
 
     struct {
         unsigned char dummy[3];  // dummy bytes to keep alignment of frame buffer

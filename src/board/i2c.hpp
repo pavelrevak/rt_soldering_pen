@@ -48,7 +48,7 @@ public:
         io::NVIC.iser(io::isr::I2C1_isr);
     }
 
-    bool write(const uint8_t addr, uint8_t *data, int len) {
+    bool write(const uint8_t addr, const uint8_t *data, int len) {
         if (busy) return false;
         busy = true;
 
