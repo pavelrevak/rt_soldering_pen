@@ -5,6 +5,7 @@
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
 #include "board/display.hpp"
+#include "board/watchdog.hpp"
 #include "heating.hpp"
 #include "display.hpp"
 
@@ -19,6 +20,7 @@ class MainClass {
         if (_heating.process(delta_ticks) == Heating::State::STOP) {
             _display.draw();
             _heating.start();
+            board::Watchdog::refresh();
         }
     }
 
@@ -31,6 +33,7 @@ class MainClass {
         board::adc.init_hw();
         board::i2c.init_hw();
         board::display.init_hw();
+        board::Watchdog::enable(200, 100);  // time and window in ms
     }
 
 public:
