@@ -21,6 +21,7 @@ class Heating {
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
     static const int PEN_MAX_CURRENT_MA = 6000;  // mA
+    static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300; // mV
     static const int PEN_RESISTANCE_SHORTED = 500;  // mOhm
     static const int PEN_RESISTANCE_MIN = 1500;  // mOhm
     static const int PEN_RESISTANCE_MAX = 2500;  // mOhm
@@ -161,6 +162,8 @@ private:
         if ((_pen_current_ma_heat / _measurements_count) > PEN_MAX_CURRENT_MA) return true;
         // check reached power
         if (_power_uw_period_ticks > _requested_power_uw_period_ticks) return true;
+        // check low voltage
+        if (_supply_voltage_mv_heat / _measurements_count < SUPPLY_VOLTAGE_HEATING_MIN_MV) return true;
         // check reached time
         if (_remaining_ticks <= _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS)) return true;
         // OK
