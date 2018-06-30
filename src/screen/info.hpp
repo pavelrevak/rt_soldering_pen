@@ -18,7 +18,7 @@ class Info : public Screen {
 
     void _draw_line(int line, const char *text, const char *value=nullptr) {
         line -= scroll_position;
-        if ((line < 0) && (line > 3)) return;
+        // if ((line < 0) && (line > 3)) return;
         _fb.draw_text(0, line * 11, text, lib::Font::sans8);
         if (value) {
             int w = lib::Font::text_width(value, lib::Font::sans8);
@@ -32,46 +32,88 @@ class Info : public Screen {
         lib::StringStream<10> ss;
         int line = 0;
 
-        _draw_line(line++, Meta::project, Meta::version);
+        if (line >= scroll_position && line < scroll_position + 3) {
+            _draw_line(line, Meta::project, Meta::version);
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_energy_mwh(), 2, 3, '\240').s(" Wh");
-        _draw_line(line++, "Total energy: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_energy_mwh(), 2, 3, '\240').s(" Wh");
+            _draw_line(line, "Total energy: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_power_mw() / 10, 2, 2, '\240').s(" W");
-        _draw_line(line++, "Heating power: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_power_mw() / 10, 2, 2, '\240').s(" W");
+            _draw_line(line, "Heating power: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_pen_current_ma_heat() / 10, 2, 2, '\240').s(" A");
-        _draw_line(line++, "Heating current: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_pen_current_ma_heat() / 10, 2, 2, '\240').s(" A");
+            _draw_line(line, "Heating current: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_pen_resistance_mo() / 10, 2, 2, '\240').s(" Ohm");
-        _draw_line(line++, "Pen resistance: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_pen_resistance_mo() / 10, 2, 2, '\240').s(" Ohm");
+            _draw_line(line, "Pen resistance: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_real_pen_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
-        _draw_line(line++, "Pen temp: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_real_pen_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
+            _draw_line(line, "Pen temp: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_cpu_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
-        _draw_line(line++, "CPU temp: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_cpu_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
+            _draw_line(line, "CPU temp: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_supply_voltage_mv_idle() / 10, 2, 2, '\240').s(" V");
-        _draw_line(line++, "Supply idle: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_supply_voltage_mv_idle() / 10, 2, 2, '\240').s(" V");
+            _draw_line(line, "Supply idle: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_supply_voltage_mv_heat() / 10, 2, 2, '\240').s(" V");
-        _draw_line(line++, "Supply heat: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_supply_voltage_mv_heat() / 10, 2, 2, '\240').s(" V");
+            _draw_line(line, "Supply heat: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_supply_voltage_mv_drop() / 10, 2, 2, '\240').s(" V");
-        _draw_line(line++, "Supply drop: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_supply_voltage_mv_drop() / 10, 2, 2, '\240').s(" V");
+            _draw_line(line, "Supply drop: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_cpu_voltage_mv_idle() / 10, 2, 2, '\240').s(" V");
-        _draw_line(line++, "CPU idle: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_cpu_voltage_mv_idle() / 10, 2, 2, '\240').s(" V");
+            _draw_line(line, "CPU idle: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().dec(_heating.get_cpu_voltage_mv_heat() / 10, 2, 2, '\240').s(" V");
-        _draw_line(line++, "CPU heat: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().dec(_heating.get_cpu_voltage_mv_heat() / 10, 2, 2, '\240').s(" V");
+            _draw_line(line, "CPU heat: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().i(_heating.get_pen_current_ma_idle(), 3, '\240').s(" mA");
-        _draw_line(line++, "Current sensor err: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().i(_heating.get_pen_current_ma_idle(), 3, '\240').s(" mA");
+            _draw_line(line, "Current sensor err: ", ss.get_str());
+        }
+        line++;
 
-        ss.reset().i(_heating.get_steady_ms() / 1000, 3, '\240').s(" s");
-        _draw_line(line++, "Steady timer: ", ss.get_str());
+        if (line >= scroll_position && line < scroll_position + 3) {
+            ss.reset().i(_heating.get_steady_ms() / 1000, 3, '\240').s(" s");
+            _draw_line(line, "Steady timer: ", ss.get_str());
+        }
+        line++;
 
         last_line = line;
     }
