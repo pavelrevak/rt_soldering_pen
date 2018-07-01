@@ -25,13 +25,15 @@ private:
 
     static const uint8_t init_cmds[32];
 
-    struct {
-        unsigned char dummy[3];  // dummy bytes to keep alignment of frame buffer
-        unsigned char display_buffer_cmds[1] = {
+    struct FbCmds {
+        char dummy[3] = {'F', 'B', ':'};  // dummy bytes to keep alignment of frame buffer
+        uint8_t display_buffer_cmds[1] = {
             Ssd1306::CO_DATA,
         };
         Fb fb;
+        static constexpr size_t FB_SIZE = sizeof(display_buffer_cmds) + sizeof(fb);
     } fb_cmds;
+
 
 public:
     inline Fb &get_fb() {
@@ -46,7 +48,7 @@ public:
     }
 
     void redraw() {
-        i2c.write(0x3c, fb_cmds.display_buffer_cmds, sizeof(fb_cmds.display_buffer_cmds) + sizeof(fb_cmds.fb));
+        i2c.write(0x3c, fb_cmds.display_buffer_cmds, FbCmds::FB_SIZE);
     }
 
     void init() {
