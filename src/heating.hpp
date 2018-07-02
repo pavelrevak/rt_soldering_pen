@@ -60,7 +60,6 @@ private:
     lib::Pid _pid;
 
     uint64_t _uptime_ticks = 0;
-    int64_t _power_uw_period_ticks = 0;  // uW * _period_ticks
     int64_t _requested_power_uw_period_ticks = 0;  // uW * _period_ticks
     int64_t _energy_uw_ticks = 0;  // uW * CORE_FREQ
     int64_t _steady_ticks = 0;  // ticks when power is steady
@@ -71,13 +70,14 @@ private:
     int _measurements_count = 0;
 
     int _requested_power_mw = 0;  // mW
+    int _power_mw = 0;  // mW
     int _cpu_voltage_mv_heat = 0;  // mV
     int _cpu_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_heat = 0;  // mV
     int _supply_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_drop = 0;  // mV
-    int _pen_current_ma_heat = 0;  // mA
-    int _pen_current_ma_idle = 0;  // mA
+    int _pen_current_ma = 0;  // mA
+    int _pen_current_ma_error = 0;  // mA
     int _pen_resistance_mo = 0;  // mOhm
     int _pen_temperature_mc = 0;  // 1/1000 degree C
     int _cpu_temperature_mc = 0;  // 1/1000 degree C
@@ -109,9 +109,8 @@ private:
         _measurements_count = 0;
         _cpu_voltage_mv_heat = 0;
         _supply_voltage_mv_heat = 0;
-        _pen_current_ma_heat = 0;
-        _pen_current_ma_idle = 0;
-        _power_uw_period_ticks = 0;
+        _pen_current_ma = 0;
+        _power_mw = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             board::adc.measure_idle_start();
             _requested_power_mw = 0;
@@ -142,26 +141,32 @@ private:
         _state = State::HEATING;
     }
 
+    int _get_compensated_pen_current() {
+        int current = board::adc.get_pen_current_ma();
+        current -= _pen_current_ma_error;
+        return current;
+    }
+
     void _cumulate_heating_measured_values() {
         _cpu_voltage_mv_heat += board::adc.get_cpu_voltage_mv();
         _supply_voltage_mv_heat += board::adc.get_supply_voltage_mv();
-        _pen_current_ma_heat += board::adc.get_pen_current_ma();
+        _pen_current_ma += _get_compensated_pen_current();
         _measurements_count++;
     }
 
-    void _cumulate_energy() {
-        int64_t energy = board::adc.get_supply_voltage_mv();
-        energy *= board::adc.get_pen_current_ma();
+    int64_t _get_power_energy_uw_period_ticks() {
+        int64_t energy = _supply_voltage_mv_heat / _measurements_count;
+        energy *= _pen_current_ma / _measurements_count;
         energy *= _measure_ticks;
-        _power_uw_period_ticks += energy;
-        _measure_ticks = 0;
+        if (energy < 0) energy *= -1;
+        return energy;
     }
 
     bool _check_heating_limits() {
         // check over current
-        if ((_pen_current_ma_heat / _measurements_count) > PEN_MAX_CURRENT_MA) return true;
+        if ((_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA) return true;
         // check reached power
-        if (_power_uw_period_ticks > _requested_power_uw_period_ticks) return true;
+        if (_get_power_energy_uw_period_ticks() > _requested_power_uw_period_ticks) return true;
         // check low voltage
         if (_supply_voltage_mv_heat / _measurements_count < SUPPLY_VOLTAGE_HEATING_MIN_MV) return true;
         // check reached time
@@ -170,27 +175,28 @@ private:
         return false;
     }
 
-    void _increase_total_energy() {
-        _energy_uw_ticks += _power_uw_period_ticks;
+    void _calculate_total_energy() {
+        int64_t power_uw_period_ticks = _supply_voltage_mv_heat;
+        power_uw_period_ticks *= _pen_current_ma;
+        power_uw_period_ticks *= _measure_ticks;
+        _power_mw = power_uw_period_ticks / _period_ticks / 1000;
+        _energy_uw_ticks += power_uw_period_ticks;
+        _measure_ticks = 0;
     }
 
     void _average_heating_measured_values() {
         _cpu_voltage_mv_heat /= _measurements_count;
         _supply_voltage_mv_heat /= _measurements_count;
-        _pen_current_ma_heat /= _measurements_count;
-    }
-
-    void _compensate_and_abs_pen_current() {
-        _pen_current_ma_heat -= _pen_current_ma_idle;
-        if (_pen_current_ma_heat < 0) _pen_current_ma_heat *= -1;
+        _pen_current_ma /= _measurements_count;
+        if (_pen_current_ma < 0) _pen_current_ma *= -1;
     }
 
     void _calculate_pen_resistance() {
-        if (_pen_current_ma_heat > 10) {
-            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma_heat;
-        } else {
-            _pen_resistance_mo = 1000000000;
+        if (_pen_current_ma > 0) {
+            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
+            if (_pen_resistance_mo < 1000000) return;
         }
+        _pen_resistance_mo = 999999;
     }
 
     void _calculate_voltage_drop() {
@@ -215,16 +221,14 @@ private:
         _measure_ticks += delta_ticks;
         if (board::adc.process() != board::Adc::State::DONE) return;
         _cumulate_heating_measured_values();
-        _cumulate_energy();
         if (!_check_heating_limits()) {
             // continue heating
             board::adc.measure_heat_start();
         } else {
             // disable heater (PWM OFF)
             board::heater.off();
-            _increase_total_energy();
             _average_heating_measured_values();
-            _compensate_and_abs_pen_current();
+            _calculate_total_energy();
             _calculate_pen_resistance();
             _calculate_voltage_drop();
             _check_heating_element();
@@ -240,6 +244,7 @@ private:
         _measurements_count = 0;
         _cpu_voltage_mv_idle = 0;
         _supply_voltage_mv_idle = 0;
+        _pen_current_ma_error = 0;
         _cpu_temperature_mc = 0;
         _pen_temperature_mc = 0;
         _state = State::IDLE;
@@ -248,7 +253,7 @@ private:
     void _cumulate_idle_measured_values() {
         _cpu_voltage_mv_idle += board::adc.get_cpu_voltage_mv();
         _supply_voltage_mv_idle += board::adc.get_supply_voltage_mv();
-        _pen_current_ma_idle += board::adc.get_pen_current_ma();
+        _pen_current_ma_error += board::adc.get_pen_current_ma();
         _cpu_temperature_mc += board::adc.get_cpu_temperature_mc();
         _pen_temperature_mc += board::adc.get_pen_temperature_mc();
         _measurements_count++;
@@ -257,7 +262,7 @@ private:
     void _average_idle_measured_values() {
         _cpu_voltage_mv_idle /= _measurements_count;
         _supply_voltage_mv_idle /= _measurements_count;
-        _pen_current_ma_idle /= _measurements_count;
+        _pen_current_ma_error /= _measurements_count;
         _cpu_temperature_mc /= _measurements_count;
         _pen_temperature_mc /= _measurements_count;
     }
@@ -292,7 +297,7 @@ public:
         Actual power in mW
     */
     int get_power_mw() {
-        return _power_uw_period_ticks / _period_ticks / 1000;
+        return _power_mw;
     }
 
     /** Getter for requested power
@@ -372,8 +377,8 @@ public:
     Return:
         pen current during heat in mA
     */
-    int get_pen_current_ma_heat() {
-        return _pen_current_ma_heat;
+    int get_pen_current_ma() {
+        return _pen_current_ma;
     }
 
     /** Getter for pen current during idle
@@ -381,8 +386,8 @@ public:
     Return:
         pen current during idle in mA
     */
-    int get_pen_current_ma_idle() {
-        return _pen_current_ma_idle;
+    int get_pen_current_ma_error() {
+        return _pen_current_ma_error;
     }
 
     /** Getter for supply voltage drop
