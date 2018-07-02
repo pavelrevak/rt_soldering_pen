@@ -15,7 +15,7 @@ public:
     GpioPin<io::base::GPIOB, 0> output;
     GpioPin<io::base::GPIOA, 2> debug_tx;
 
-    Usart<io::base::USART1, 0, 500> uart;
+    Usart<io::base::USART1, 0, 255> uart;
     lib::OStream dbg;
 
     void init_hw() {
