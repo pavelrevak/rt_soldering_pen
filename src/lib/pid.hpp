@@ -1,7 +1,5 @@
 #pragma once
 
-#include "board/debug.hpp"
-
 namespace lib {
 
 class Pid {
@@ -58,16 +56,7 @@ public:
         int request_power = request_p + request_i + request_d;
         if (request_power > request_limit) request_power = request_limit;
         if (request_power < 0) request_power = 0;
-
-        // debug output
-        board::debug.dbg << feedback;
-        board::debug.dbg << '\t' << set_point;
-        board::debug.dbg << '\t' << request_power;
-        board::debug.dbg << '\t' << request_p;
-        board::debug.dbg << '\t' << request_i;
-        board::debug.dbg << '\t' << request_d;
-        board::debug.dbg << IOStream::endl;
-
+        // keep last error
         error_p_last = error_p;
         return request_power;
     }

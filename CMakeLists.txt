@@ -58,7 +58,7 @@ add_executable(${PROJECT_NAME}
     src/board/systick
     src/board/buttons
     src/board/heater
-    src/board/debug
+    # src/board/debug
     src/board/adc
     src/board/i2c
     src/board/display

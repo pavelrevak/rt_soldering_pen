@@ -1,6 +1,6 @@
 #include "board/clock.hpp"
 #include "board/systick.hpp"
-#include "board/debug.hpp"
+// #include "board/debug.hpp"
 #include "board/adc.hpp"
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
@@ -27,7 +27,7 @@ class MainClass {
     void _init_hw() {
         board::clock.init_hw();
         board::systick.init_hw();
-        board::debug.init_hw();
+        // board::debug.init_hw();
         board::heater.init_hw();
         board::buttons.init_hw();
         board::adc.init_hw();
@@ -47,7 +47,7 @@ public:
         _heating.init();
         _heating.start();
 
-        board::debug.dbg << lib::IOStream::endl;
+        // board::debug.dbg << lib::IOStream::endl << "started.." << lib::IOStream::endl;
         last_ticks = board::systick.get_counter();
 
         while (true) {
