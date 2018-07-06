@@ -20,12 +20,12 @@ class Heating {
     static const int IDLE_MIN_TIME_MS = 8;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
-    static const int PEN_MAX_CURRENT_MA = 6000;  // mA
+    static const int TIP_MAX_CURRENT_MA = 6000;  // mA
     static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300; // mV
-    static const int PEN_RESISTANCE_SHORTED = 500;  // mOhm
-    static const int PEN_RESISTANCE_MIN = 1500;  // mOhm
-    static const int PEN_RESISTANCE_MAX = 2500;  // mOhm
-    static const int PEN_RESISTANCE_BROKEN = 100000;  // mOhm
+    static const int TIP_RESISTANCE_SHORTED = 500;  // mOhm
+    static const int TIP_RESISTANCE_MIN = 1500;  // mOhm
+    static const int TIP_RESISTANCE_MAX = 2500;  // mOhm
+    static const int TIP_RESISTANCE_BROKEN = 100000;  // mOhm
 
 public:
 
@@ -47,12 +47,12 @@ public:
     } _heating_element_status = HeatingElementStatus::UNKNOWN;
 
 
-    enum class PenSensorStatus {
+    enum class TipSensorStatus {
         UNKNOWN,
         OK,
         BROKEN,
         SHORTED,
-    } _pen_sensor_status = PenSensorStatus::UNKNOWN;
+    } _tip_sensor_status = TipSensorStatus::UNKNOWN;
 
 private:
 
@@ -76,10 +76,10 @@ private:
     int _supply_voltage_mv_heat = 0;  // mV
     int _supply_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_drop = 0;  // mV
-    int _pen_current_ma = 0;  // mA
-    int _pen_current_ma_error = 0;  // mA
-    int _pen_resistance_mo = 0;  // mOhm
-    int _pen_temperature_mc = 0;  // 1/1000 degree C
+    int _heater_current_ma = 0;  // mA
+    int _heater_current_ma_error = 0;  // mA
+    int _heater_resistance_mo = 0;  // mOhm
+    int _tip_temperature_mc = 0;  // 1/1000 degree C
     int _cpu_temperature_mc = 0;  // 1/1000 degree C
 
     int _average_requested_power = 0;
@@ -94,7 +94,7 @@ private:
     }
 
     void _state_stop() {
-        bool stop = getPenSensorStatus() != Heating::PenSensorStatus::OK;
+        bool stop = getTipSensorStatus() != Heating::TipSensorStatus::OK;
         stop |= getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED;
         stop |= getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN;
         stop |= get_steady_ms() > STANDBY_TIME_MS;
@@ -109,7 +109,7 @@ private:
         _measurements_count = 0;
         _cpu_voltage_mv_heat = 0;
         _supply_voltage_mv_heat = 0;
-        _pen_current_ma = 0;
+        _heater_current_ma = 0;
         _power_mw = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             board::adc.measure_idle_start();
@@ -137,26 +137,26 @@ private:
         // measure start
         board::adc.measure_heat_start();
         _heating_element_status = HeatingElementStatus::UNKNOWN;
-        _pen_sensor_status = PenSensorStatus::UNKNOWN;
+        _tip_sensor_status = TipSensorStatus::UNKNOWN;
         _state = State::HEATING;
     }
 
-    int _get_compensated_pen_current() {
-        int current = board::adc.get_pen_current_ma();
-        current -= _pen_current_ma_error;
+    int _get_compensated_heater_current() {
+        int current = board::adc.get_heater_current_ma();
+        current -= _heater_current_ma_error;
         return current;
     }
 
     void _cumulate_heating_measured_values() {
         _cpu_voltage_mv_heat += board::adc.get_cpu_voltage_mv();
         _supply_voltage_mv_heat += board::adc.get_supply_voltage_mv();
-        _pen_current_ma += _get_compensated_pen_current();
+        _heater_current_ma += _get_compensated_heater_current();
         _measurements_count++;
     }
 
     int64_t _get_power_energy_uw_period_ticks() {
         int64_t energy = _supply_voltage_mv_heat / _measurements_count;
-        energy *= _pen_current_ma / _measurements_count;
+        energy *= _heater_current_ma / _measurements_count;
         energy *= _measure_ticks;
         if (energy < 0) energy *= -1;
         return energy;
@@ -164,7 +164,7 @@ private:
 
     bool _check_heating_limits() {
         // check over current
-        if ((_pen_current_ma / _measurements_count) > PEN_MAX_CURRENT_MA) return true;
+        if ((_heater_current_ma / _measurements_count) > TIP_MAX_CURRENT_MA) return true;
         // check reached power
         if (_get_power_energy_uw_period_ticks() > _requested_power_uw_period_ticks) return true;
         // check low voltage
@@ -177,7 +177,7 @@ private:
 
     void _calculate_total_energy() {
         int64_t power_uw_period_ticks = _supply_voltage_mv_heat;
-        power_uw_period_ticks *= _pen_current_ma;
+        power_uw_period_ticks *= _heater_current_ma;
         power_uw_period_ticks *= _measure_ticks;
         _power_mw = power_uw_period_ticks / _period_ticks / 1000;
         _energy_uw_ticks += power_uw_period_ticks;
@@ -187,16 +187,16 @@ private:
     void _average_heating_measured_values() {
         _cpu_voltage_mv_heat /= _measurements_count;
         _supply_voltage_mv_heat /= _measurements_count;
-        _pen_current_ma /= _measurements_count;
-        if (_pen_current_ma < 0) _pen_current_ma *= -1;
+        _heater_current_ma /= _measurements_count;
+        if (_heater_current_ma < 0) _heater_current_ma *= -1;
     }
 
-    void _calculate_pen_resistance() {
-        if (_pen_current_ma > 0) {
-            _pen_resistance_mo = _supply_voltage_mv_heat * 1000 / _pen_current_ma;
-            if (_pen_resistance_mo < 1000000) return;
+    void _calculate_tip_resistance() {
+        if (_heater_current_ma > 0) {
+            _heater_resistance_mo = _supply_voltage_mv_heat * 1000 / _heater_current_ma;
+            if (_heater_resistance_mo < 1000000) return;
         }
-        _pen_resistance_mo = 999999;
+        _heater_resistance_mo = 999999;
     }
 
     void _calculate_voltage_drop() {
@@ -204,13 +204,13 @@ private:
     }
 
     void _check_heating_element() {
-        if (_pen_resistance_mo < PEN_RESISTANCE_SHORTED) {
+        if (_heater_resistance_mo < TIP_RESISTANCE_SHORTED) {
             _heating_element_status = HeatingElementStatus::SHORTED;
-        } else if (_pen_resistance_mo < PEN_RESISTANCE_MIN) {
+        } else if (_heater_resistance_mo < TIP_RESISTANCE_MIN) {
             _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
-        } else if (_pen_resistance_mo > PEN_RESISTANCE_BROKEN) {
+        } else if (_heater_resistance_mo > TIP_RESISTANCE_BROKEN) {
             _heating_element_status = HeatingElementStatus::BROKEN;
-        } else if (_pen_resistance_mo > PEN_RESISTANCE_MAX) {
+        } else if (_heater_resistance_mo > TIP_RESISTANCE_MAX) {
             _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
         } else {
             _heating_element_status = HeatingElementStatus::OK;
@@ -229,7 +229,7 @@ private:
             board::heater.off();
             _average_heating_measured_values();
             _calculate_total_energy();
-            _calculate_pen_resistance();
+            _calculate_tip_resistance();
             _calculate_voltage_drop();
             _check_heating_element();
             _state = State::STABILIZE;
@@ -244,34 +244,34 @@ private:
         _measurements_count = 0;
         _cpu_voltage_mv_idle = 0;
         _supply_voltage_mv_idle = 0;
-        _pen_current_ma_error = 0;
+        _heater_current_ma_error = 0;
         _cpu_temperature_mc = 0;
-        _pen_temperature_mc = 0;
+        _tip_temperature_mc = 0;
         _state = State::IDLE;
     }
 
     void _cumulate_idle_measured_values() {
         _cpu_voltage_mv_idle += board::adc.get_cpu_voltage_mv();
         _supply_voltage_mv_idle += board::adc.get_supply_voltage_mv();
-        _pen_current_ma_error += board::adc.get_pen_current_ma();
+        _heater_current_ma_error += board::adc.get_heater_current_ma();
         _cpu_temperature_mc += board::adc.get_cpu_temperature_mc();
-        _pen_temperature_mc += board::adc.get_pen_temperature_mc();
+        _tip_temperature_mc += board::adc.get_tip_temperature_mc();
         _measurements_count++;
     }
 
     void _average_idle_measured_values() {
         _cpu_voltage_mv_idle /= _measurements_count;
         _supply_voltage_mv_idle /= _measurements_count;
-        _pen_current_ma_error /= _measurements_count;
+        _heater_current_ma_error /= _measurements_count;
         _cpu_temperature_mc /= _measurements_count;
-        _pen_temperature_mc /= _measurements_count;
+        _tip_temperature_mc /= _measurements_count;
     }
 
-    void _check_pen_sensor() {
-        if (board::adc.is_pen_sensor_ok()) {
-            _pen_sensor_status = PenSensorStatus::OK;
+    void _check_tip_sensor() {
+        if (board::adc.is_tip_sensor_ok()) {
+            _tip_sensor_status = TipSensorStatus::OK;
         } else {
-            _pen_sensor_status = PenSensorStatus::BROKEN;
+            _tip_sensor_status = TipSensorStatus::BROKEN;
             _heating_element_status = HeatingElementStatus::UNKNOWN;
         }
     }
@@ -284,7 +284,7 @@ private:
             board::adc.measure_idle_start();
         } else {
             _average_idle_measured_values();
-            _check_pen_sensor();
+            _check_tip_sensor();
             _state_stop();
             _state = State::STOP;
         }
@@ -309,13 +309,13 @@ public:
         return _requested_power_mw;
     }
 
-    /** Getter for measured pen resistance
+    /** Getter for measured heater resistance
 
     Return:
-       pen resistance in mOhm
+       heater resistance in mOhm
     */
-    int get_pen_resistance_mo() {
-        return _pen_resistance_mo;
+    int get_heater_resistance_mo() {
+        return _heater_resistance_mo;
     }
 
     /** Getter for total consumed energy
@@ -327,7 +327,7 @@ public:
         return _energy_uw_ticks / board::Clock::CORE_FREQ / 1000 / 3600;
     }
 
-    /** Getter how long is pen steady
+    /** Getter how long is steady
 
     Return:
         steady time in ms
@@ -372,22 +372,22 @@ public:
         return _supply_voltage_mv_idle;
     }
 
-    /** Getter for pen current during heat
+    /** Getter for heater current during heat
 
     Return:
-        pen current during heat in mA
+        heater current during heat in mA
     */
-    int get_pen_current_ma() {
-        return _pen_current_ma;
+    int get_heater_current_ma() {
+        return _heater_current_ma;
     }
 
-    /** Getter for pen current during idle
+    /** Getter for heater current during idle
 
     Return:
-        pen current during idle in mA
+        heater current during idle in mA
     */
-    int get_pen_current_ma_error() {
-        return _pen_current_ma_error;
+    int get_heater_current_ma_error() {
+        return _heater_current_ma_error;
     }
 
     /** Getter for supply voltage drop
@@ -400,7 +400,7 @@ public:
     }
 
     /** Getter for CPU temperature
-    (used for measuring temperature of other end of thermo coupler in pen)
+    (used for measuring temperature of other end of thermo coupler in tip)
 
     Return:
         CPU temperature in 1/1000 degree Celsius
@@ -409,27 +409,27 @@ public:
         return _cpu_temperature_mc;
     }
 
-    /** Getter for PEN temperature difference
+    /** Getter for TIP temperature difference
     (temperature difference between both ends of thermo coupler)
 
     Return:
-        PEN temperature in 1/1000 degree Celsius
+        TIP temperature in 1/1000 degree Celsius
     */
-    int get_pen_temperature_mc() {
-        return _pen_temperature_mc;
+    int get_tip_temperature_mc() {
+        return _tip_temperature_mc;
     }
 
-    /** Getter for real PEN temperature
+    /** Getter for real TIP temperature
 
     Return:
-        PEN temperature in 1/1000 degree Celsius
+        TIP temperature in 1/1000 degree Celsius
     */
-    int get_real_pen_temperature_mc() {
-        return _cpu_temperature_mc + _pen_temperature_mc;
+    int get_real_tip_temperature_mc() {
+        return _cpu_temperature_mc + _tip_temperature_mc;
     }
 
-    /** Getter pen heating element state
-    indicate if PEN is OK, shorted, broken, with low or high resistance
+    /** Getter tip heating element state
+    indicate if TIP is OK, shorted, broken, with low or high resistance
 
     Return:
         state from enum HeatingElementStatus
@@ -438,15 +438,15 @@ public:
         return _heating_element_status;
     }
 
-    /** Getter pen temperature sensor state
-    indicate if PEN temperature sensor is OK, broken or shorted
+    /** Getter tip temperature sensor state
+    indicate if TIP temperature sensor is OK, broken or shorted
     (TODO: shorted detection is currently not implemented)
 
     Return:
-        state from enum PenSensorStatus
+        state from enum TipSensorStatus
     */
-    PenSensorStatus getPenSensorStatus() {
-        return _pen_sensor_status;
+    TipSensorStatus getTipSensorStatus() {
+        return _tip_sensor_status;
     }
 
     /** Initialize module
@@ -463,10 +463,10 @@ public:
     */
     void start() {
         int power_mw = 0;
-        if (getPenSensorStatus() != Heating::PenSensorStatus::OK) {
+        if (getTipSensorStatus() != Heating::TipSensorStatus::OK) {
             _pid.reset();
         } else {
-            power_mw = _pid.process(get_real_pen_temperature_mc(), _preset.get_temperature());
+            power_mw = _pid.process(get_real_tip_temperature_mc(), _preset.get_temperature());
         }
         _period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
         _remaining_ticks += _period_ticks;

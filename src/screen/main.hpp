@@ -81,8 +81,8 @@ class Main : public Screen {
 
     int _edit_blink = 0;
 
-    void _draw_pen_temperature() {
-        _temperature(48, 10, _heating.get_real_pen_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
+    void _draw_tip_temperature() {
+        _temperature(48, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
     }
 
     void _draw_preset() {
@@ -112,7 +112,7 @@ class Main : public Screen {
     void _draw_state() {
         if (status_blink++ >= 6) status_blink = 0;
         if (_preset.is_standby()) {
-            if (_heating.getPenSensorStatus() == Heating::PenSensorStatus::OK) {
+            if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OK) {
                 if (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN) {
                     _fb.draw_text(55, 0, "BROKEN RT TIP!", lib::Font::sans8);
                     return;  // do not show energy
@@ -121,10 +121,10 @@ class Main : public Screen {
                     _fb.draw_text(50, 0, "SHORTED RT TIP!", lib::Font::sans8);
                     return;  // do not show energy
                 }
-                if (_heating.get_real_pen_temperature_mc() < 50000 || status_blink < 4) {
+                if (_heating.get_real_tip_temperature_mc() < 50000 || status_blink < 4) {
                     _fb.draw_text(87, 0, "STANDBY", lib::Font::sans8);
                 }
-            } else if (_heating.getPenSensorStatus() == Heating::PenSensorStatus::BROKEN) {
+            } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
                 _fb.draw_text(83, 0, "NO RT TIP", lib::Font::sans8);
             }
         } else if (_heating.get_steady_ms() > IDLE_MESSAGE_MS && status_blink < 4) {
@@ -232,7 +232,7 @@ public:
 
     void draw() override {
         _draw_preset();
-        _draw_pen_temperature();
+        _draw_tip_temperature();
         _draw_power();
         _draw_state();
     }

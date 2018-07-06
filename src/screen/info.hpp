@@ -50,20 +50,20 @@ class Info : public Screen {
         line++;
 
         if (line >= scroll_position && line < scroll_position + 3) {
-            ss.reset().dec(_heating.get_pen_current_ma() / 10, 2, 2, '\240').s(" A");
+            ss.reset().dec(_heating.get_heater_current_ma() / 10, 2, 2, '\240').s(" A");
             _draw_line(line, "Heating current: ", ss.get_str());
         }
         line++;
 
         if (line >= scroll_position && line < scroll_position + 3) {
-            ss.reset().dec(_heating.get_pen_resistance_mo() / 10, 2, 2, '\240').s(" Ohm");
-            _draw_line(line, "Pen resistance: ", ss.get_str());
+            ss.reset().dec(_heating.get_heater_resistance_mo() / 10, 2, 2, '\240').s(" Ohm");
+            _draw_line(line, "Heater resistance: ", ss.get_str());
         }
         line++;
 
         if (line >= scroll_position && line < scroll_position + 3) {
-            ss.reset().dec(_heating.get_real_pen_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
-            _draw_line(line, "Pen temp: ", ss.get_str());
+            ss.reset().dec(_heating.get_real_tip_temperature_mc() / 100, 3, 1, '\240').s(" \260C");
+            _draw_line(line, "Tip temp: ", ss.get_str());
         }
         line++;
 
@@ -104,7 +104,7 @@ class Info : public Screen {
         line++;
 
         if (line >= scroll_position && line < scroll_position + 3) {
-            ss.reset().i(_heating.get_pen_current_ma_error(), 3, '\240').s(" mA");
+            ss.reset().i(_heating.get_heater_current_ma_error(), 3, '\240').s(" mA");
             _draw_line(line, "Current sensor err: ", ss.get_str());
         }
         line++;

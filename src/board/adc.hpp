@@ -28,15 +28,15 @@ private:
     io::Dma &r_dma = io::DMA1;
     io::Dma::Channel &r_dma_adc = r_dma.CHANNEL(DMA_CH_ADC);
 
-    GpioPin<io::base::GPIOA, 0> pen_current_input;
-    GpioPin<io::base::GPIOA, 1> pen_temperature_input;
+    GpioPin<io::base::GPIOA, 0> heater_current_input;
+    GpioPin<io::base::GPIOA, 1> tip_temperature_input;
     GpioPin<io::base::GPIOA, 3> supply_voltage_input;
 
     struct RawMeasured {};
 
     struct RawMeasuredIdle : public RawMeasured {
-        uint16_t pen_current;
-        uint16_t pen_temperature;
+        uint16_t heater_current;
+        uint16_t tip_temperature;
         uint16_t supply_voltage;
         uint16_t cpu_temperature;
         uint16_t cpu_reference;
@@ -45,7 +45,7 @@ private:
     static constexpr int RAW_MEASURE_IDLE_ITEMS = sizeof(RawMeasuredIdle) / sizeof(uint16_t);
 
     struct RawMeasuredHeat : public RawMeasured {
-        uint16_t pen_current;
+        uint16_t heater_current;
         uint16_t supply_voltage;
         uint16_t cpu_reference;
     } _raw_measured_heat;
@@ -55,9 +55,9 @@ private:
     int _actual_cpu_voltage_mv = 0;
     int _actual_supply_voltage_mv = 0;
     int _actual_cpu_temperature_mc = 0;
-    int _actual_pen_temperature_mc = 0;
-    int _actual_pen_current_ma = 0;
-    bool _pen_sensor_ok = false;
+    int _actual_tip_temperature_mc = 0;
+    int _actual_heater_current_ma = 0;
+    bool _tip_sensor_ok = false;
 
     void _start_dma_measure(RawMeasured &raw_measured, const int count) {
         // Configure DMA for ADC
@@ -103,42 +103,42 @@ private:
         _actual_supply_voltage_mv = tmp;
     }
 
-    void _calculate_pen_temperature(const uint16_t raw_pen_temperature) {
-        int tmp = raw_pen_temperature;
-        _pen_sensor_ok = tmp <= 65000;
-        if (!_pen_sensor_ok) {
-            _actual_pen_temperature_mc = 0;
+    void _calculate_tip_temperature(const uint16_t raw_tip_temperature) {
+        int tmp = raw_tip_temperature;
+        _tip_sensor_ok = tmp <= 65000;
+        if (!_tip_sensor_ok) {
+            _actual_tip_temperature_mc = 0;
             return;
         }
         tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 500 * 1000;  // 500 degrees at 3V
         tmp /= 3000;
-        _actual_pen_temperature_mc = tmp;
+        _actual_tip_temperature_mc = tmp;
     }
 
-    void _calculate_pen_current(const uint16_t raw_pen_current) {
-        int tmp = raw_pen_current;
+    void _calculate_heater_current(const uint16_t raw_heater_current) {
+        int tmp = raw_heater_current;
         tmp -= MAX_VALUE / 2;
         tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 1000;  // mA
         tmp /= 110;  // 110 mV / A
-        _actual_pen_current_ma = tmp;
+        _actual_heater_current_ma = tmp;
     }
 
     void _calculate_idle() {
         _calculate_cpu_voltage(_raw_measured_idle.cpu_reference);
         _calculate_cpu_temperature(_raw_measured_idle.cpu_temperature);
         _calculate_supply_voltage(_raw_measured_idle.supply_voltage);
-        _calculate_pen_temperature(_raw_measured_idle.pen_temperature);
-        _calculate_pen_current(_raw_measured_idle.pen_current);
+        _calculate_tip_temperature(_raw_measured_idle.tip_temperature);
+        _calculate_heater_current(_raw_measured_idle.heater_current);
     }
 
     void _calculate_heat() {
         _calculate_cpu_voltage(_raw_measured_heat.cpu_reference);
         _calculate_supply_voltage(_raw_measured_heat.supply_voltage);
-        _calculate_pen_current(_raw_measured_heat.pen_current);
+        _calculate_heater_current(_raw_measured_heat.heater_current);
     }
 
     void _process_measure() {
@@ -191,39 +191,39 @@ public:
         return _actual_cpu_temperature_mc;
     }
 
-    /** Last measured pen sensor temperature
+    /** Last measured tip sensor temperature
 
     Return:
         CPU temperature in 1/1000 degree Celsius
     */
-    inline int get_pen_temperature_mc() {
-        return _actual_pen_temperature_mc;
+    inline int get_tip_temperature_mc() {
+        return _actual_tip_temperature_mc;
     }
 
-    /** Last measured pen current
+    /** Last measured heater current
 
     Return:
-        pen current in mA
+        heater current in mA
     */
-    inline int get_pen_current_ma() {
-        return _actual_pen_current_ma;
+    inline int get_heater_current_ma() {
+        return _actual_heater_current_ma;
     }
 
-    /** Last state of pen temperature sensor
+    /** Last state of tip temperature sensor
 
     Return:
         true if is OK
     */
-    inline bool is_pen_sensor_ok() {
-        return _pen_sensor_ok;
+    inline bool is_tip_sensor_ok() {
+        return _tip_sensor_ok;
     }
 
     /** HW initialization
     */
     void init_hw() {
         // GPIO
-        pen_current_input.configure_analog();
-        pen_temperature_input.configure_analog();
+        heater_current_input.configure_analog();
+        tip_temperature_input.configure_analog();
         supply_voltage_input.configure_analog();
         // ADC
         r_adc.CFGR2.b.CKMODE = io::Adc::Cfgr2::Ckmode::PCLK_DIV4;
@@ -250,8 +250,8 @@ public:
     void measure_idle_start() {
         _measure_state = State::MEASURE_IDLE;
         io::Adc::Chselr chselr(0x00000000);
-        chselr.b.CHSEL0 = true;  // pen_current
-        chselr.b.CHSEL1 = true;  // pen_temperature
+        chselr.b.CHSEL0 = true;  // heater_current
+        chselr.b.CHSEL1 = true;  // tip_temperature
         chselr.b.CHSEL3 = true;  // supply_voltage
         chselr.b.CHSEL16 = true;  // cpu_temperature
         chselr.b.CHSEL17 = true;  // cpu_reference
@@ -264,7 +264,7 @@ public:
     void measure_heat_start() {
         _measure_state = State::MEASURE_HEAT;
         io::Adc::Chselr chselr(0x00000000);
-        chselr.b.CHSEL0 = true;  // pen_current
+        chselr.b.CHSEL0 = true;  // heater_current
         chselr.b.CHSEL3 = true;  // supply_voltage
         chselr.b.CHSEL17 = true;  // cpu_reference
         r_adc.CHSELR.r = chselr.r;
