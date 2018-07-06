@@ -2,46 +2,46 @@
 
 ## Buttons
 
-RT soldering pen has only two buttons: *UP* and *DOWN*. Firmware recognize different pressing states and combinations.
+RT soldering pen has only two buttons: **UP** and **DOWN**. Firmware recognize different pressing states and combinations.
 
 ### Pressing states
 
-- *PRESS* press button shortly (shorter than 1 sec) after release will be generated action
-- *LONG* hold button longer than 1 sec, after 1 sec will be generated action "long"
-- *HOLD* hold button and after 1 sec will be generated repeat actions
+- **PRESS** press button shortly (shorter than 1 sec) after release will be generated action
+- **LONG** hold button longer than 1 sec, after 1 sec will be generated action "long"
+- **HOLD** hold button and after 1 sec will be generated repeat actions
 
 ### Pressing combinations
 
-- *UP* press, long, hold
-- *DOWN* press, long, hold
-- *BOTH* press, long
+- **UP** press, long, hold
+- **DOWN** press, long, hold
+- **BOTH** press, long
 
 ### General operating principles:
 
-##### *PRESS* *UP* or *DOWN*:
+##### **PRESS** **UP** or **DOWN**:
 
 - select appropriate value (preset temperatures on main screen)
 - scroll content on screen
 - increase or decrease value
 
-##### *LONG* *UP* or *DOWN*:
+##### **LONG** **UP** or **DOWN**:
 
 - enter edit mode of appropriate value (preset temperatures on main screen)
 
-##### *HOLD* *UP* or *DOWN*:
+##### **HOLD** **UP** or **DOWN**:
 
 (autorepeat)
 
 - scroll content on screen
 - increase or decrease value
 
-##### *PRESS* *BOTH*:
+##### **PRESS** **BOTH**:
 
 - STOP heating
 - go back from info screen (current implementation)
 - select item in menu (planed implementation)
 
-##### *LONG* *BOTH*:
+##### **LONG** **BOTH**:
 
 - enter info screen (current implementation)
 - enter menu (planed implementation)
@@ -51,6 +51,8 @@ RT soldering pen has only two buttons: *UP* and *DOWN*. Firmware recognize diffe
 Actually there are two screens.
 
 ### Main screen
+
+![oled3]
 
 Show basic information:
 
@@ -67,36 +69,48 @@ Show basic information:
 - supply voltage
 - supply voltage drop - show dropped voltage of power supply during heating, generally it depend on power supply resistance and resistance of wires
 
+![oled1]
+![oled2]
+![oled4]
+
 #### Editing preset temperatures
 
-On *Main screen* are two (up and down) preset values, which you can easily change.
+On **Main screen** are two (up and down) preset values, which you can easily change.
 Editing is visible by blinking appropriate preset value.
 
 ##### Entering edit mode:
 
-*LONG* press *UP* or *DOWN* button of the appropriate preset temperature.
+**LONG** press **UP** or **DOWN** button of the appropriate preset temperature.
 
 ##### Changing the edited preset temperature:
 
-*UP* or *DOWN* button.
+**UP** or **DOWN** button.
 
 ##### Exiting edit preset value:
 
-*PRESS* *BOTH* buttons.
+**PRESS** **BOTH** buttons.
 
 ### Info screen
+
+![oled5]
 
 This screen is actually in development status and their function will change in future.
 Actually it show some basic measured information
 
 ##### Entering info screen:
 
-in main screen *LONG* press of *BOTH* buttons
+in main screen **LONG** press of **BOTH** buttons
 
 ##### Scrolling info screen:
 
-*UP* or *DOWN* button
+**UP** or **DOWN** button
 
 ##### Exiting info screen:
 
-*PRESS* *BOTH* buttons
+**PRESS** **BOTH** buttons
+
+[oled1]: oled1.png "Screenshot"
+[oled2]: oled2.png "Screenshot"
+[oled3]: oled3.png "Screenshot"
+[oled4]: oled4.png "Screenshot"
+[oled5]: oled5.png "Screenshot"
