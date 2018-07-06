@@ -1,5 +1,9 @@
 # RT soldering pen
 
+![oled4]
+
+[Manual]
+
 This firmware is for my project [RT soldering pen](https://hackaday.io/project/18899-rt-soldering-pen)
 
 You can buy HW at [Tindie](https://www.tindie.com/products/vlk/rt-soldering-pen/)
@@ -54,3 +58,6 @@ make srec
 or building also support other targets `hex` and `bin`
 
 Final files are saved in `_build` folder
+
+[manual]: doc/MANUAL.md "Manual"
+[oled4]: doc/oled4.png "Screenshot"
