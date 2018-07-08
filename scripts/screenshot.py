@@ -52,6 +52,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('file', help='file name to save screen-shot')
     parser.add_argument("-z", "--zoom", type=int, default=1, help="zoom picture multiplicator")
+    parser.add_argument("-b", "--border", type=int, default=0, help="add border around screenshot")
     args = parser.parse_args()
     print(args)
     dev = swd.Swd()
@@ -59,7 +60,8 @@ def main():
     frame_buffer = find_framebuffer(memory, FB_MAGIC_WORD, FB_OFFSET, FB_SIZE)
     frame_buffer = rotate_bytes(frame_buffer, WIDTH, HEIGHT)
     img = PIL.Image.frombytes('1', (WIDTH, HEIGHT), frame_buffer, 'raw')
-    img = PIL.ImageOps.expand(img, 4)
+    if args.border > 0:
+        img = PIL.ImageOps.expand(img, args.border)
     if args.zoom > 1:
         img = img.resize((img.width * args.zoom, img.height * args.zoom))
     img.save(args.file)
