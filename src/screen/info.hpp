@@ -28,92 +28,133 @@ class Info : public Screen {
         } item_type;
     };
 
-    MenuItem menu_items[14] = {
-        {
-            Meta::project,
-            Meta::version,
-            0,
-            0,
-            MenuItem::ItemType::TEXT,
-        }, {
-            "Total energy:",
-            " Wh",
-            0,
-            3,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Heating power:",
-            " W",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Tip current:",
-            " A",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Heater resistance:",
-            " Ohm",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Tip temperature:",
-            " \260C",
-            0,
-            1,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "CPU temp:",
-            " \260C",
-            0,
-            1,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Supply idle:",
-            " V",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Supply heat:",
-            " V",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Supply drop:",
-            " V",
-            0,
-            3,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "CPU supply idle:",
-            " V",
-            0,
-            3,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "CPU supply heat:",
-            " V",
-            0,
-            3,
-            MenuItem::ItemType::VALUE_DEC,
-        }, {
-            "Current sensor err:",
-            " mA",
-            0,
-            0,
-            MenuItem::ItemType::VALUE_INT,
-        }, {
-            "Steady timer:",
-            " s",
-            0,
-            2,
-            MenuItem::ItemType::VALUE_INT,
-        },
+    MenuItem menu_item_info = {
+        Meta::project,
+        Meta::version,
+        0,
+        0,
+        MenuItem::ItemType::TEXT,
+    };
+
+    MenuItem menu_item_total_energy = {
+        "Total energy:",
+        " Wh",
+        0,
+        3,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_heating_power = {
+        "Heating power:",
+        " W",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_heater_current = {
+        "Heater current:",
+        " A",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_heater_resistance = {
+        "Heater resistance:",
+        " Ohm",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_tip_temperature = {
+        "Tip temperature:",
+        " \260C",
+        0,
+        1,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_cpu_temperature = {
+        "CPU temp:",
+        " \260C",
+        0,
+        1,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_supply_idle = {
+        "Supply idle:",
+        " V",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_supply_heat = {
+        "Supply heat:",
+        " V",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_supply_drop = {
+        "Supply drop:",
+        " V",
+        0,
+        3,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_cpu_supply_idle = {
+        "CPU supply idle:",
+        " V",
+        0,
+        3,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_cpu_supply_heat = {
+        "CPU supply heat:",
+        " V",
+        0,
+        3,
+        MenuItem::ItemType::VALUE_DEC,
+    };
+
+    MenuItem menu_item_current_sensor_error = {
+        "Current sensor err:",
+        " mA",
+        0,
+        0,
+        MenuItem::ItemType::VALUE_INT,
+    };
+
+    MenuItem menu_item_steady_timer = {
+        "Steady timer:",
+        " s",
+        0,
+        2,
+        MenuItem::ItemType::VALUE_INT,
+    };
+
+    MenuItem *menu_items[14] = {
+        &menu_item_info,
+        &menu_item_total_energy,
+        &menu_item_heating_power,
+        &menu_item_heater_current,
+        &menu_item_heater_resistance,
+        &menu_item_tip_temperature,
+        &menu_item_cpu_temperature,
+        &menu_item_supply_idle,
+        &menu_item_supply_heat,
+        &menu_item_supply_drop,
+        &menu_item_cpu_supply_idle,
+        &menu_item_cpu_supply_heat,
+        &menu_item_current_sensor_error,
+        &menu_item_steady_timer,
     };
 
     void _draw_menu_item(int y_pos, MenuItem &menu_item) {
@@ -142,9 +183,9 @@ class Info : public Screen {
     void _draw_info() {
         int line = 0;
         int pos_y = 0;
-        for (auto &menu_item : menu_items) {
+        for (auto *menu_item : menu_items) {
             if (line >= scroll_position && line < scroll_position + 3) {
-                _draw_menu_item(pos_y, menu_item);
+                _draw_menu_item(pos_y, *menu_item);
                 pos_y += 11;
             }
             line++;
@@ -154,19 +195,19 @@ class Info : public Screen {
     }
 
     void _update_values() {
-        menu_items[1].value = _heating.get_energy_mwh();
-        menu_items[2].value = _heating.get_power_mw() / 10;
-        menu_items[3].value = _heating.get_heater_current_ma() / 10;
-        menu_items[4].value = _heating.get_heater_resistance_mo() / 10;
-        menu_items[5].value = _heating.get_real_tip_temperature_mc() / 100;
-        menu_items[6].value = _heating.get_cpu_temperature_mc() / 100;
-        menu_items[7].value = _heating.get_supply_voltage_mv_idle() / 10;
-        menu_items[8].value = _heating.get_supply_voltage_mv_heat() / 10;
-        menu_items[9].value = _heating.get_supply_voltage_mv_drop() / 10;
-        menu_items[10].value = _heating.get_cpu_voltage_mv_idle();
-        menu_items[11].value = _heating.get_cpu_voltage_mv_heat();
-        menu_items[12].value = _heating.get_heater_current_ma_error();
-        menu_items[13].value = _heating.get_steady_ms();
+        menu_item_total_energy.value = _heating.get_energy_mwh();
+        menu_item_heating_power.value = _heating.get_power_mw() / 10;
+        menu_item_heater_current.value = _heating.get_heater_current_ma() / 10;
+        menu_item_heater_resistance.value = _heating.get_heater_resistance_mo() / 10;
+        menu_item_tip_temperature.value = _heating.get_real_tip_temperature_mc() / 100;
+        menu_item_cpu_temperature.value = _heating.get_cpu_temperature_mc() / 100;
+        menu_item_supply_idle.value = _heating.get_supply_voltage_mv_idle() / 10;
+        menu_item_supply_heat.value = _heating.get_supply_voltage_mv_heat() / 10;
+        menu_item_supply_drop.value = _heating.get_supply_voltage_mv_drop() / 10;
+        menu_item_cpu_supply_idle.value = _heating.get_cpu_voltage_mv_idle();
+        menu_item_cpu_supply_heat.value = _heating.get_cpu_voltage_mv_heat();
+        menu_item_current_sensor_error.value = _heating.get_heater_current_ma_error();
+        menu_item_steady_timer.value = _heating.get_steady_ms() / 1000;;
     }
 
 public:
