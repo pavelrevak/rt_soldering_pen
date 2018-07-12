@@ -66,4 +66,5 @@ def main():
         img = img.resize((img.width * args.zoom, img.height * args.zoom))
     img.save(args.file)
 
-main()
+if __name__ == "__main__":
+    main()
