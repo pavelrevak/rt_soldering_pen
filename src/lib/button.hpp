@@ -40,6 +40,8 @@ public:
             pressed_miliseconds = 0;
         } else if (pressed_miliseconds < LONG_DOWN_MILISECONDS) {
             released_short_counter++;
+        } else {
+            pressed_miliseconds = 0;
         }
     }
 
