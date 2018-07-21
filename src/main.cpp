@@ -8,10 +8,12 @@
 #include "board/watchdog.hpp"
 #include "heating.hpp"
 #include "display.hpp"
+#include "settings.hpp"
 
 class MainClass {
     unsigned last_ticks = 0;
 
+    Settings _settings;
     Heating _heating;
     Display _display;
 
@@ -37,7 +39,8 @@ class MainClass {
     }
 
 public:
-    MainClass() : _display(_heating) {}
+    MainClass() :
+        _display(_heating, _settings) {}
 
     void run() {
         _init_hw();

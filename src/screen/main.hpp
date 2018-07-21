@@ -5,6 +5,7 @@
 #include "lib/stringstream.hpp"
 #include "preset.hpp"
 #include "heating.hpp"
+#include "settings.hpp"
 
 namespace screen {
 
@@ -17,18 +18,31 @@ class Main : public Screen {
     board::Display::Fb &_fb = board::display.get_fb();
     Heating &_heating;
     Preset &_preset;
+    Settings &_settings;
 
     void _preset_selected(int x, int y, bool is_on) {
-        x = _fb.draw_text(x, y, is_on ? "\275" : "\274" , lib::Font::num13);
+        x = _fb.draw_char(x, y, is_on ? '\275' : '\274' , lib::Font::num13);
     }
 
     /** display temperature in 1/1000 degree Celsius */
     template<class Tfl, class Tfs>
     void _temperature(int x, int y, int temperature, const Tfl font_large, const Tfs font_small) {
         lib::StringStream<4> ss;
-        ss.i(temperature / 1000, 3, '\240');
+        if (_settings.get_fahrenheit()) {
+            // Fahrenheit
+            ss.i(temperature * 9 / 5000 + 32, 3, '\240');
+        } else {
+            // Celsius
+            ss.i(temperature / 1000, 3, '\240');
+        }
         x = _fb.draw_text(x, y, ss.get_str(), font_large);
-        _fb.draw_text(x, y, "\260C", font_small);
+        if (_settings.get_fahrenheit()) {
+            // Fahrenheit
+            _fb.draw_text(x, y, "\260F", font_small);
+        } else {
+            // Celsius
+            _fb.draw_text(x, y, "\260C", font_small);
+        }
     }
 
     /** display voltage in millivolts */
@@ -174,10 +188,11 @@ class Main : public Screen {
 
 public:
 
-    Main(ScreenHolder &screen_holder, Heating &heating) :
+    Main(ScreenHolder &screen_holder, Heating &heating, Settings &settings) :
         Screen(screen_holder),
         _heating(heating),
-        _preset(heating.get_preset()) {}
+        _preset(heating.get_preset()),
+        _settings(settings) {}
 
     bool button_up(const lib::Button::Action action) override {
         if (_preset.is_editing()) return _button_up_edit(action);

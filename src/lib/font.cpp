@@ -153,8 +153,22 @@ const uint8_t Font::sans8[] = {
     '~', 5, 0x08, 0x04, 0x08, 0x10, 0x08,
     '\260', 4, 0x06, 0x09, 0x09, 0x06,
     '\240', 5, 0x00, 0x00, 0x00, 0x00, 0x00,  // used as space with same width like numbers
+    '\274', 4, 0x41, 0x22, 0x14, 0x08,
+    '\275', 4, 0x55, 0x2a, 0x14, 0x08,
+    '\276', 4, 0x7f, 0x3e, 0x1c, 0x08,
     0,
 };
+
+/*
+1   O . . .   O . . .   O . . .
+2   . O . .   . O . .   O O . .
+4   . . O .   O . O .   O O O .
+8   . . . O   . O . O   O O O O
+1   . . O .   O . O .   O O O .
+2   . O . .   . O . .   O O . .
+4   O . . .   O . . .   O . . .
+8   . . . .   . . . .   . . . .
+*/
 
 const uint8_t Font::num7[] = {
     7, 1,

@@ -6,159 +6,152 @@
 #include "preset.hpp"
 #include "heating.hpp"
 #include "meta.hpp"
+#include "settings.hpp"
 
 namespace screen {
 
 class Info : public Screen {
+
     board::Display::Fb &_fb = board::display.get_fb();
     Heating &_heating;
-
-    int scroll_position = 0;
+    Settings &_settings;
 
     struct MenuItem {
-        const char *label;
-        const char *suffix;
-        int value;
-        uint8_t dp;
         enum class ItemType : uint8_t {
             TEXT,
             VALUE_INT,
             VALUE_DEC,
+            EDIT_BINARY,
             END,
-        } item_type;
+        };
+
+        const char *label;
+        const char *suffix;
+        int value;
+        uint8_t dp;
+        ItemType item_type;
+        bool updated;
     };
 
-    MenuItem menu_item_info = {
-        Meta::project,
-        Meta::version,
-        0,
-        0,
-        MenuItem::ItemType::TEXT,
+    enum MenuItems {
+        ITEM_ABOUT,
+        // ITEM_ADVANCED_MODE,
+        ITEM_FAHRENHEIT,
+        // ITEM_LEFT_HANDED,
+        ITEM_TOTAL_ENERGY,
+        ITEM_HEATER_POWER,
+        ITEM_HEATER_CURRENT,
+        ITEM_HEATER_RESISTANCE,
+        ITEM_CPU_TEMPERATURE,
+        ITEM_CPU_SUPPLY,
+        ITEM_CURRENT_SENSOR_ERROR,
+        ITEMS_COUNT,
     };
 
-    MenuItem menu_item_total_energy = {
-        "Total energy:",
-        " Wh",
-        0,
-        3,
-        MenuItem::ItemType::VALUE_DEC,
+    int _scroll_position = 0;
+    int _cursor_position = ITEM_ABOUT;
+
+    MenuItem _menu_items[ITEMS_COUNT] = {
+        {
+            Meta::project,
+            Meta::version,
+            0,
+            0,
+            MenuItem::ItemType::TEXT,
+            false,
+        // }, {
+        //     "Advanced mode:",
+        //     nullptr,
+        //     0,
+        //     3,
+        //     MenuItem::ItemType::EDIT_BINARY,
+        //     false,
+        }, {
+            "Fahrenheit:",
+            nullptr,
+            0,
+            3,
+            MenuItem::ItemType::EDIT_BINARY,
+            false,
+        // }, {
+        //     "Left handed:",
+        //     nullptr,
+        //     0,
+        //     3,
+        //     MenuItem::ItemType::EDIT_BINARY,
+        //     false,
+        }, {
+            "Total energy:",
+            " Wh",
+            0,
+            3,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "Heater power:",
+            " W",
+            0,
+            2,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "Heater current:",
+            " A",
+            0,
+            2,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "Heater resistance:",
+            " Ohm",
+            0,
+            2,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "CPU temperature:",
+            " \260C",
+            0,
+            1,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "CPU supply:",
+            " V",
+            0,
+            3,
+            MenuItem::ItemType::VALUE_DEC,
+            false,
+        }, {
+            "Current sensor err:",
+            " mA",
+            0,
+            0,
+            MenuItem::ItemType::VALUE_INT,
+            false,
+        }
     };
 
-    MenuItem menu_item_heating_power = {
-        "Heating power:",
-        " W",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_DEC,
-    };
+    void _draw_menu_item_cursor(int y_pos, const MenuItem &menu_item) {
+        switch (menu_item.item_type) {
+        // case MenuItem::ItemType::VALUE_INT:
+        // case MenuItem::ItemType::VALUE_DEC:
+        //     _fb.draw_char(0, y_pos, '\275', lib::Font::sans8);
+        //     break;
+        case MenuItem::ItemType::EDIT_BINARY:
+            _fb.draw_char(0, y_pos, '\276', lib::Font::sans8);
+            break;
+        default:
+            _fb.draw_char(0, y_pos, '\274', lib::Font::sans8);
+            break;
+        }
+    }
 
-    MenuItem menu_item_heater_current = {
-        "Heater current:",
-        " A",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_DEC,
-    };
+    void _draw_menu_item_label(int y_pos, MenuItem &menu_item) {
+        _fb.draw_text(6, y_pos, menu_item.label, lib::Font::sans8);
+    }
 
-    MenuItem menu_item_heater_resistance = {
-        "Heater resistance:",
-        " Ohm",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_tip_temperature = {
-        "Tip temperature:",
-        " \260C",
-        0,
-        1,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_cpu_temperature = {
-        "CPU temp:",
-        " \260C",
-        0,
-        1,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_supply_idle = {
-        "Supply idle:",
-        " V",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_supply_heat = {
-        "Supply heat:",
-        " V",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_supply_drop = {
-        "Supply drop:",
-        " V",
-        0,
-        3,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_cpu_supply_idle = {
-        "CPU supply idle:",
-        " V",
-        0,
-        3,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_cpu_supply_heat = {
-        "CPU supply heat:",
-        " V",
-        0,
-        3,
-        MenuItem::ItemType::VALUE_DEC,
-    };
-
-    MenuItem menu_item_current_sensor_error = {
-        "Current sensor err:",
-        " mA",
-        0,
-        0,
-        MenuItem::ItemType::VALUE_INT,
-    };
-
-    MenuItem menu_item_steady_timer = {
-        "Steady timer:",
-        " s",
-        0,
-        2,
-        MenuItem::ItemType::VALUE_INT,
-    };
-
-    MenuItem *menu_items[14] = {
-        &menu_item_info,
-        &menu_item_total_energy,
-        &menu_item_heating_power,
-        &menu_item_heater_current,
-        &menu_item_heater_resistance,
-        &menu_item_tip_temperature,
-        &menu_item_cpu_temperature,
-        &menu_item_supply_idle,
-        &menu_item_supply_heat,
-        &menu_item_supply_drop,
-        &menu_item_cpu_supply_idle,
-        &menu_item_cpu_supply_heat,
-        &menu_item_current_sensor_error,
-        &menu_item_steady_timer,
-    };
-
-    void _draw_menu_item(int y_pos, MenuItem &menu_item) {
-        _fb.draw_text(0, y_pos, menu_item.label, lib::Font::sans8);
+    void _draw_menu_item_value(int y_pos, MenuItem &menu_item) {
         int x_pos = 128;
         lib::StringStream<20> ss;
         switch (menu_item.item_type) {
@@ -167,6 +160,13 @@ class Info : public Screen {
             break;
         case MenuItem::ItemType::VALUE_DEC:
             ss.dec(menu_item.value, 1, menu_item.dp);
+            break;
+        case MenuItem::ItemType::EDIT_BINARY:
+            if (menu_item.value) {
+                ss << "ON";
+            } else {
+                ss << "OFF";
+            }
             break;
         default:
             break;
@@ -178,50 +178,68 @@ class Info : public Screen {
         _fb.draw_text(x_pos, y_pos, ss.get_str(), lib::Font::sans8);
     }
 
-    int last_line = 0;
+    void _draw_menu_item(int y_pos, MenuItem &menu_item, bool show_cursor=false) {
+        if (show_cursor) {
+            _draw_menu_item_cursor(y_pos, menu_item);
+        }
+        _draw_menu_item_label(y_pos, menu_item);
+        _draw_menu_item_value(y_pos, menu_item);
+    }
 
     void _draw_info() {
         int line = 0;
         int pos_y = 0;
-        for (auto *menu_item : menu_items) {
-            if (line >= scroll_position && line < scroll_position + 3) {
-                _draw_menu_item(pos_y, *menu_item);
+        if (_cursor_position < _scroll_position) _scroll_position = _cursor_position;
+        if (_cursor_position > _scroll_position + 1) _scroll_position = _cursor_position - 2;
+        for (auto menu_item : _menu_items) {
+            if (line >= _scroll_position && line < _scroll_position + 3) {
+                _draw_menu_item(pos_y, menu_item, line == _cursor_position);
                 pos_y += 11;
             }
             line++;
         }
-
-        last_line = line;
     }
 
     void _update_values() {
-        menu_item_total_energy.value = _heating.get_energy_mwh();
-        menu_item_heating_power.value = _heating.get_power_mw() / 10;
-        menu_item_heater_current.value = _heating.get_heater_current_ma() / 10;
-        menu_item_heater_resistance.value = _heating.get_heater_resistance_mo() / 10;
-        menu_item_tip_temperature.value = _heating.get_real_tip_temperature_mc() / 100;
-        menu_item_cpu_temperature.value = _heating.get_cpu_temperature_mc() / 100;
-        menu_item_supply_idle.value = _heating.get_supply_voltage_mv_idle() / 10;
-        menu_item_supply_heat.value = _heating.get_supply_voltage_mv_heat() / 10;
-        menu_item_supply_drop.value = _heating.get_supply_voltage_mv_drop() / 10;
-        menu_item_cpu_supply_idle.value = _heating.get_cpu_voltage_mv_idle();
-        menu_item_cpu_supply_heat.value = _heating.get_cpu_voltage_mv_heat();
-        menu_item_current_sensor_error.value = _heating.get_heater_current_ma_error();
-        menu_item_steady_timer.value = _heating.get_steady_ms() / 1000;;
+        // _menu_items[ITEM_ADVANCED_MODE].value = _settings.get_advanced_mode();
+        _menu_items[ITEM_FAHRENHEIT].value = _settings.get_fahrenheit();
+        // _menu_items[ITEM_LEFT_HANDED].value = _settings.get_left_handed();
+        _menu_items[ITEM_TOTAL_ENERGY].value = _heating.get_energy_mwh();
+        _menu_items[ITEM_HEATER_POWER].value = _heating.get_power_mw() / 10;
+        _menu_items[ITEM_HEATER_CURRENT].value = _heating.get_heater_current_ma() / 10;
+        _menu_items[ITEM_HEATER_RESISTANCE].value = _heating.get_heater_resistance_mo() / 10;
+        _menu_items[ITEM_CPU_TEMPERATURE].value = _heating.get_cpu_temperature_mc() / 100;
+        _menu_items[ITEM_CPU_SUPPLY].value = _heating.get_cpu_voltage_mv_idle();
+        _menu_items[ITEM_CURRENT_SENSOR_ERROR].value = _heating.get_heater_current_ma_error();
+    }
+
+    void button_long_menu_item() {
+        switch (_cursor_position) {
+        // case ITEM_ADVANCED_MODE:
+        //     _settings.toggle_advanced_mode();
+        //     break;
+        case ITEM_FAHRENHEIT:
+            _settings.toggle_fahrenheit();
+            break;
+        // case ITEM_LEFT_HANDED:
+        //     _settings.toggle_left_handed();
+        //     break;
+        }
     }
 
 public:
 
-    Info(ScreenHolder &screen_holder, Heating &heating) :
+    Info(ScreenHolder &screen_holder, Heating &heating, Settings &settings) :
         Screen(screen_holder),
-        _heating(heating) {}
+        _heating(heating),
+        _settings(settings) {}
 
     bool button_up(const lib::Button::Action action) override {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
             case lib::Button::Action::PRESSED_LONG:
             case lib::Button::Action::REPEAT:
-                if (scroll_position > 0) scroll_position--;
+                if (_cursor_position > 0) _cursor_position--;
                 break;
             default:
                 break;
@@ -234,7 +252,7 @@ public:
             case lib::Button::Action::RELEASED_SHORT:
             case lib::Button::Action::PRESSED_LONG:
             case lib::Button::Action::REPEAT:
-                if (scroll_position < last_line - 2) scroll_position++;
+                if (_cursor_position < ITEMS_COUNT - 1) _cursor_position++;
                 break;
             default:
                 break;
@@ -245,10 +263,11 @@ public:
     bool button_both(const lib::Button::Action action) override {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
+                _settings.save();
                 change_screen(ScreenId::MAIN);
                 return true;
             case lib::Button::Action::PRESSED_LONG:
-                // enter MENU
+                button_long_menu_item();
                 break;
             default:
                 break;
