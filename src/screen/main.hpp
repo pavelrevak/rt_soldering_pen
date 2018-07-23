@@ -99,6 +99,24 @@ class Main : public Screen {
         _temperature(48, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
     }
 
+    void _draw_tip_temperature_large() {
+        if (_preset.is_standby()) {
+            if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OK) {
+                if (
+                    (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN) ||
+                    (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED)
+                ) {
+                    _fb.draw_text(50, 0, "Err", lib::Font::num32);
+                    return;  // do not show energy
+                }
+            } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
+                _fb.draw_text(50, 0, "---", lib::Font::num32);
+                return;
+            }
+        }
+        _temperature(50, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num11);
+    }
+
     void _draw_preset() {
         if (_preset.is_editing() && _edit_blink++ > 5) _edit_blink = 0;
         if (_preset.get_selected() == 0) _preset_selected(0, 0, !_preset.is_standby());
@@ -119,6 +137,16 @@ class Main : public Screen {
         if (!_preset.is_standby()) {
             _watts_mw(106, 0, _heating.get_power_mw());
         }
+    }
+
+    void _draw_power_bargraph() {
+        if (_preset.is_standby()) return;
+        int power = _heating.get_power_mw();
+        int len = power * 32 / 40000;
+        if (len == 0 && power > 0) len = 1;
+        if (len > 32) len = 32;
+        _fb.draw_vline(126, 32 - len, len);
+        _fb.draw_vline(127, 32 - len, len);
     }
 
     int status_blink = 0;
@@ -247,9 +275,14 @@ public:
 
     void draw() override {
         _draw_preset();
-        _draw_tip_temperature();
-        _draw_power();
-        _draw_state();
+        if (_settings.get_advanced_mode()) {
+            _draw_tip_temperature();
+            _draw_power();
+            _draw_state();
+        } else {
+            _draw_tip_temperature_large();
+            _draw_power_bargraph();
+        }
     }
 
 };

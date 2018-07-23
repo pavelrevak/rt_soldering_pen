@@ -13,6 +13,7 @@ public:
     static const uint16_t num11[];
     static const uint16_t num13[];
     static const uint32_t num22[];
+    static const uint32_t num32[];
 
     template <typename F>
     static int char_width(const char ch, const F *font) {

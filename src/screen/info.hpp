@@ -35,7 +35,7 @@ class Info : public Screen {
 
     enum MenuItems {
         ITEM_ABOUT,
-        // ITEM_ADVANCED_MODE,
+        ITEM_ADVANCED_MODE,
         ITEM_FAHRENHEIT,
         // ITEM_LEFT_HANDED,
         ITEM_TOTAL_ENERGY,
@@ -59,13 +59,13 @@ class Info : public Screen {
             0,
             MenuItem::ItemType::TEXT,
             false,
-        // }, {
-        //     "Advanced mode:",
-        //     nullptr,
-        //     0,
-        //     3,
-        //     MenuItem::ItemType::EDIT_BINARY,
-        //     false,
+        }, {
+            "Advanced mode:",
+            nullptr,
+            0,
+            3,
+            MenuItem::ItemType::EDIT_BINARY,
+            false,
         }, {
             "Fahrenheit:",
             nullptr,
@@ -201,7 +201,7 @@ class Info : public Screen {
     }
 
     void _update_values() {
-        // _menu_items[ITEM_ADVANCED_MODE].value = _settings.get_advanced_mode();
+        _menu_items[ITEM_ADVANCED_MODE].value = _settings.get_advanced_mode();
         _menu_items[ITEM_FAHRENHEIT].value = _settings.get_fahrenheit();
         // _menu_items[ITEM_LEFT_HANDED].value = _settings.get_left_handed();
         _menu_items[ITEM_TOTAL_ENERGY].value = _heating.get_energy_mwh();
@@ -215,9 +215,9 @@ class Info : public Screen {
 
     void button_long_menu_item() {
         switch (_cursor_position) {
-        // case ITEM_ADVANCED_MODE:
-        //     _settings.toggle_advanced_mode();
-        //     break;
+        case ITEM_ADVANCED_MODE:
+            _settings.toggle_advanced_mode();
+            break;
         case ITEM_FAHRENHEIT:
             _settings.toggle_fahrenheit();
             break;

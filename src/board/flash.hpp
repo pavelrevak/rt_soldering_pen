@@ -26,7 +26,6 @@ public:
     }
 
     static void flash_erase_block(const volatile void *dst) {
-        // const volatile uint32_t *destination = static_cast<const volatile uint32_t *>(dst);
         flash_unlock();
         // erase block at address
         io::FLASH.CR.b.PER = true;
