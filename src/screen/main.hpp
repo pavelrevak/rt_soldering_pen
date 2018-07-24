@@ -84,10 +84,10 @@ class Main : public Screen {
     /** display power in milliwatts */
     void _energy(int x, int y, int energy_mwh) {
         lib::StringStream<5> ss;
-        if (energy_mwh < 100000) {
-            ss.dec(energy_mwh / 10, 2, 2, '\240');
+        if (energy_mwh < 10000) {
+            ss.dec(energy_mwh / 10, 1, 2, '\240');
         } else {
-            ss.dec(energy_mwh / 100, 3, 1, '\240');
+            ss.dec(energy_mwh / 100, 2, 1, '\240');
         }
         x = _fb.draw_text(x, y, ss.get_str(), lib::Font::num7);
         _fb.draw_text(x, y, "Wh", lib::Font::sans8);
@@ -95,86 +95,86 @@ class Main : public Screen {
 
     int _edit_blink = 0;
 
-    void _draw_tip_temperature() {
-        _temperature(48, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
+    void _draw_tip_temperature(int offset) {
+        _temperature(offset, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
     }
 
-    void _draw_tip_temperature_large() {
+    void _draw_tip_temperature_large(int offset) {
         if (_preset.is_standby()) {
             if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OK) {
                 if (
                     (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN) ||
                     (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED)
                 ) {
-                    _fb.draw_text(50, 0, "Err", lib::Font::num32);
+                    _fb.draw_text(offset, 0, "Err", lib::Font::num32);
                     return;  // do not show energy
                 }
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
-                _fb.draw_text(50, 0, "---", lib::Font::num32);
+                _fb.draw_text(offset, 0, " --", lib::Font::num32);
                 return;
             }
         }
-        _temperature(50, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num11);
+        _temperature(offset, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num11);
     }
 
-    void _draw_preset() {
+    void _draw_preset(int offset) {
         if (_preset.is_editing() && _edit_blink++ > 5) _edit_blink = 0;
-        if (_preset.get_selected() == 0) _preset_selected(0, 0, !_preset.is_standby());
-        if (_preset.get_selected() == 1) _preset_selected(0, 19, !_preset.is_standby());
+        if (_preset.get_selected() == 0) _preset_selected(offset, 0, !_preset.is_standby());
+        if (_preset.get_selected() == 1) _preset_selected(offset, 19, !_preset.is_standby());
         if (!_preset.is_editing(0) || _edit_blink < 5) {
-            _temperature(6, 0, _preset.get_preset(0), lib::Font::num13, lib::Font::num7);
+            _temperature(offset + 6, 0, _preset.get_preset(0), lib::Font::num13, lib::Font::num7);
         }
         if (!_preset.is_editing(1) || _edit_blink < 5) {
-            _temperature(6, 19, _preset.get_preset(1), lib::Font::num13, lib::Font::num7);
+            _temperature(offset + 6, 19, _preset.get_preset(1), lib::Font::num13, lib::Font::num7);
         }
     }
 
-    void _draw_power() {
-        _voltage_mv(106, 14, _heating.get_supply_voltage_mv_idle());
+    void _draw_power(int offset) {
+        _voltage_mv(offset + 5, 14, _heating.get_supply_voltage_mv_idle());
         if (_heating.get_supply_voltage_mv_drop() < 0) {
-            _drop_voltage_mv(101, 25, _heating.get_supply_voltage_mv_drop());
+            _drop_voltage_mv(offset, 25, _heating.get_supply_voltage_mv_drop());
         }
         if (!_preset.is_standby()) {
-            _watts_mw(106, 0, _heating.get_power_mw());
+            _watts_mw(offset + 5, 0, _heating.get_power_mw());
         }
     }
 
-    void _draw_power_bargraph() {
+    void _draw_power_bargraph(int offset) {
         if (_preset.is_standby()) return;
         int power = _heating.get_power_mw();
         int len = power * 32 / 40000;
         if (len == 0 && power > 0) len = 1;
         if (len > 32) len = 32;
-        _fb.draw_vline(126, 32 - len, len);
-        _fb.draw_vline(127, 32 - len, len);
+        _fb.draw_vline(offset, 32 - len, len);
+        _fb.draw_vline(offset + 1, 32 - len, len);
     }
 
     int status_blink = 0;
 
-    void _draw_state() {
+    void _draw_state(int offset) {
         if (status_blink++ >= 6) status_blink = 0;
         if (_preset.is_standby()) {
             if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OK) {
                 if (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::BROKEN) {
-                    _fb.draw_text(55, 0, "BROKEN RT TIP!", lib::Font::sans8);
+                    _fb.draw_text(offset + 10, 0, "BROKEN RT TIP!", lib::Font::sans8);
                     return;  // do not show energy
                 }
                 if (_heating.getHeatingElementStatus() == Heating::HeatingElementStatus::SHORTED) {
-                    _fb.draw_text(50, 0, "SHORTED RT TIP!", lib::Font::sans8);
+                    _fb.draw_text(offset + 4, 0, "SHORTED RT TIP!", lib::Font::sans8);
                     return;  // do not show energy
                 }
                 if (_heating.get_real_tip_temperature_mc() < 50000 || status_blink < 4) {
-                    _fb.draw_text(87, 0, "STANDBY", lib::Font::sans8);
+                    _fb.draw_text(offset + 39, 0, "STANDBY", lib::Font::sans8);
                 }
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
-                _fb.draw_text(83, 0, "NO RT TIP", lib::Font::sans8);
+                _fb.draw_text(offset + 35, 0, "NO RT TIP", lib::Font::sans8);
             }
         } else if (_heating.get_steady_ms() > IDLE_MESSAGE_MS && status_blink < 4) {
-            _fb.draw_text(83, 0, "IDLE", lib::Font::sans8);
+            _fb.draw_text(offset + 35, 0, "IDLE", lib::Font::sans8);
         } else {
             status_blink = 0;
         }
-        _energy(45, 0, _heating.get_energy_mwh());
+        _energy(offset, 0, _heating.get_energy_mwh());
     }
 
     bool _button_up_edit(const lib::Button::Action action) {
@@ -274,14 +274,26 @@ public:
     }
 
     void draw() override {
-        _draw_preset();
-        if (_settings.get_advanced_mode()) {
-            _draw_tip_temperature();
-            _draw_power();
-            _draw_state();
+        if (_settings.get_left_handed()) {
+            _draw_preset(86);
+            if (_settings.get_advanced_mode()) {
+                _draw_tip_temperature(0);
+                _draw_power(53);
+                _draw_state(0);
+            } else {
+                _draw_tip_temperature_large(8);
+                _draw_power_bargraph(0);
+            }
         } else {
-            _draw_tip_temperature_large();
-            _draw_power_bargraph();
+            _draw_preset(0);
+            if (_settings.get_advanced_mode()) {
+                _draw_tip_temperature(48);
+                _draw_power(101);
+                _draw_state(48);
+            } else {
+                _draw_tip_temperature_large(50);
+                _draw_power_bargraph(126);
+            }
         }
     }
 

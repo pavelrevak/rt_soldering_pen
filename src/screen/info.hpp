@@ -37,7 +37,7 @@ class Info : public Screen {
         ITEM_ABOUT,
         ITEM_ADVANCED_MODE,
         ITEM_FAHRENHEIT,
-        // ITEM_LEFT_HANDED,
+        ITEM_LEFT_HANDED,
         ITEM_TOTAL_ENERGY,
         ITEM_HEATER_POWER,
         ITEM_HEATER_CURRENT,
@@ -73,13 +73,13 @@ class Info : public Screen {
             3,
             MenuItem::ItemType::EDIT_BINARY,
             false,
-        // }, {
-        //     "Left handed:",
-        //     nullptr,
-        //     0,
-        //     3,
-        //     MenuItem::ItemType::EDIT_BINARY,
-        //     false,
+        }, {
+            "Left handed:",
+            nullptr,
+            0,
+            3,
+            MenuItem::ItemType::EDIT_BINARY,
+            false,
         }, {
             "Total energy:",
             " Wh",
@@ -203,7 +203,7 @@ class Info : public Screen {
     void _update_values() {
         _menu_items[ITEM_ADVANCED_MODE].value = _settings.get_advanced_mode();
         _menu_items[ITEM_FAHRENHEIT].value = _settings.get_fahrenheit();
-        // _menu_items[ITEM_LEFT_HANDED].value = _settings.get_left_handed();
+        _menu_items[ITEM_LEFT_HANDED].value = _settings.get_left_handed();
         _menu_items[ITEM_TOTAL_ENERGY].value = _heating.get_energy_mwh();
         _menu_items[ITEM_HEATER_POWER].value = _heating.get_power_mw() / 10;
         _menu_items[ITEM_HEATER_CURRENT].value = _heating.get_heater_current_ma() / 10;
@@ -221,9 +221,9 @@ class Info : public Screen {
         case ITEM_FAHRENHEIT:
             _settings.toggle_fahrenheit();
             break;
-        // case ITEM_LEFT_HANDED:
-        //     _settings.toggle_left_handed();
-        //     break;
+        case ITEM_LEFT_HANDED:
+            _settings.toggle_left_handed();
+            break;
         }
     }
 

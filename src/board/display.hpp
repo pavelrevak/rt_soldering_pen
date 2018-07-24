@@ -48,6 +48,7 @@ public:
     }
 
     void redraw() {
+        while (i2c.is_busy());
         i2c.write(0x3c, fb_cmds.display_buffer_cmds, FbCmds::FB_SIZE);
     }
 
@@ -55,8 +56,17 @@ public:
         fb_cmds.fb.clear();
         oled_nrst.set();
         i2c.write(0x3c, init_cmds, sizeof(init_cmds));
-        while (i2c.is_busy());
         redraw();
+    }
+
+    void rotate(bool x, bool y) {
+        uint8_t rotate_cmds[3] {
+            Ssd1306::CO_CMD,
+            x ? Ssd1306::SETSEGREMAPINC : Ssd1306::SETSEGREMAPDEC,
+            y ? Ssd1306::COMSCANINC : Ssd1306::COMSCANDEC,
+        };
+        while (i2c.is_busy());
+        i2c.write(0x3c, rotate_cmds, sizeof(rotate_cmds));
     }
 };
 
