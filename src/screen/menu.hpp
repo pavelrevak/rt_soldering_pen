@@ -10,7 +10,7 @@
 
 namespace screen {
 
-class Info : public Screen {
+class Menu : public Screen {
 
     board::Display::Fb &_fb = board::display.get_fb();
     Heating &_heating;
@@ -186,7 +186,7 @@ class Info : public Screen {
         _draw_menu_item_value(y_pos, menu_item);
     }
 
-    void _draw_info() {
+    void _draw_menu() {
         int line = 0;
         int pos_y = 0;
         if (_cursor_position < _scroll_position) _scroll_position = _cursor_position;
@@ -229,7 +229,7 @@ class Info : public Screen {
 
 public:
 
-    Info(ScreenHolder &screen_holder, Heating &heating, Settings &settings) :
+    Menu(ScreenHolder &screen_holder, Heating &heating, Settings &settings) :
         Screen(screen_holder),
         _heating(heating),
         _settings(settings) {}
@@ -277,7 +277,7 @@ public:
 
     void draw() override {
         _update_values();
-        _draw_info();
+        _draw_menu();
     }
 
 };

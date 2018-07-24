@@ -4,20 +4,20 @@
 #include "lib/button.hpp"
 #include "screen/screen.hpp"
 #include "screen/main.hpp"
-#include "screen/info.hpp"
+#include "screen/menu.hpp"
 #include "settings.hpp"
 
 class Display {
     screen::ScreenHolder _screen_holder;
 
     screen::Main _screen_main;
-    screen::Info _screen_info;
+    screen::Menu _screen_menu;
 
     Settings &_settings;
 
     screen::Screen *_screens[static_cast<int>(screen::ScreenId::COUNT)] = {
         &_screen_main,
-        &_screen_info,
+        &_screen_menu,
     };
 
     static const int BUTTONS_SAMPLE_TICKS = board::Clock::CORE_FREQ / 1000 * 10;  // ticks
@@ -73,7 +73,7 @@ public:
     Display(Heating &heating, Settings &settings) :
         _screen_holder(_screens),
         _screen_main(_screen_holder, heating, settings),
-        _screen_info(_screen_holder, heating, settings),
+        _screen_menu(_screen_holder, heating, settings),
         _settings(settings) {}
 
     void process(unsigned delta_ticks) {
