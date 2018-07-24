@@ -38,13 +38,12 @@ RT soldering pen has only two buttons: **UP** and **DOWN**. Firmware recognize d
 ##### **PRESS** **BOTH**:
 
 - STOP heating
-- go back from info screen (current implementation)
-- select item in menu (planed implementation)
+- exit menu screen
 
 ##### **LONG** **BOTH**:
 
-- enter info screen (current implementation)
-- enter menu (planed implementation)
+- enter menu screen
+- change item in menu
 
 ## Screens
 
@@ -52,11 +51,23 @@ Actually there are two screens.
 
 ### Main screen
 
+#### Normal mode
+
+![oled6]
+
+Show very basic information
+
+- preset temperatures and selected preset (with arrow)
+- actual TIP temperature (if no TIP is attached, CPU temperature is shown)
+- bar-graph - actual heating power.
+
+#### Advanced mode
+
 ![oled3]
 
-Show basic information:
+Show some verbose information:
 
-- preset temperatures
+- preset temperatures and selected preset (with arrow)
 - actual TIP temperature (if no TIP is attached, CPU temperature is shown)
 - consumed energy (this is restarted with power cycle)
 - status
@@ -72,6 +83,13 @@ Show basic information:
 ![oled1]
 ![oled2]
 ![oled4]
+
+#### Left handed mode
+
+Display is upside down, also with some rearrangements.
+
+![oled7]
+![oled8]
 
 #### Editing preset temperatures
 
@@ -90,27 +108,50 @@ Editing is visible by blinking appropriate preset value.
 
 **PRESS** **BOTH** buttons.
 
-### Info screen
+### Menu screen
 
 ![oled5]
+![oled9]
 
-This screen is actually in development status and their function will change in future.
-Actually it show some basic measured information
+This screen show simple menu with:
 
-##### Entering info screen:
+- version information
+- basic settings:
+  - Advanced mode
+  - Fahrenheit
+  - Left handed
+- some verbose information:
+  - Total power
+  - Heater power
+  - Heater current
+  - Heater resistance
+  - CPU temperature
+  - CPU supply
+  - Current sensor error
 
-in main screen **LONG** press of **BOTH** buttons
+**Entering menu screen:**
 
-##### Scrolling info screen:
+- in main screen **LONG** press of **BOTH** buttons
 
-**UP** or **DOWN** button
+**Scrolling main screen**
 
-##### Exiting info screen:
+-  **UP** or **DOWN** button
 
-**PRESS** **BOTH** buttons
+**Changing ON/OFF values:**
+
+-  **LONG** press of **BOTH** buttons
+
+**Exiting main screen:**
+
+-  **PRESS** **BOTH** buttons
+
+*This also save settings*
 
 [oled1]: oled1.png "Screenshot"
 [oled2]: oled2.png "Screenshot"
 [oled3]: oled3.png "Screenshot"
 [oled4]: oled4.png "Screenshot"
 [oled5]: oled5.png "Screenshot"
+[oled6]: oled6.png "Screenshot"
+[oled7]: oled7.png "Screenshot"
+[oled8]: oled8.png "Screenshot"
