@@ -96,17 +96,17 @@ Display is upside down, also with some rearrangements.
 On **Main screen** are two (up and down) preset values, which you can easily change.
 Editing is visible by blinking appropriate preset value.
 
-##### Entering edit mode:
+**Entering edit mode:**
 
-**LONG** press **UP** or **DOWN** button of the appropriate preset temperature.
+- **LONG** press **UP** or **DOWN** button of the appropriate preset temperature.
 
-##### Changing the edited preset temperature:
+**Changing the edited preset temperature:**
 
-**UP** or **DOWN** button.
+- **UP** or **DOWN** button.
 
-##### Exiting edit preset value:
+**Exiting edit preset value:**
 
-**PRESS** **BOTH** buttons.
+- **PRESS** **BOTH** buttons.
 
 ### Menu screen
 
@@ -155,3 +155,4 @@ This screen show simple menu with:
 [oled6]: oled6.png "Screenshot"
 [oled7]: oled7.png "Screenshot"
 [oled8]: oled8.png "Screenshot"
+[oled9]: oled9.png "Screenshot"
