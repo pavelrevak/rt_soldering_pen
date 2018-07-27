@@ -30,10 +30,10 @@ class Main : public Screen {
         lib::StringStream<4> ss;
         if (_settings.get_fahrenheit()) {
             // Fahrenheit
-            ss.i(temperature * 9 / 5000 + 32, 3, '\240');
+            ss.i(temperature * 9 / 5000 + 32, 3, ' ');
         } else {
             // Celsius
-            ss.i(temperature / 1000, 3, '\240');
+            ss.i(temperature / 1000, 3, ' ');
         }
         x = _fb.draw_text(x, y, ss.get_str(), font_large);
         if (_settings.get_fahrenheit()) {
@@ -96,7 +96,7 @@ class Main : public Screen {
     int _edit_blink = 0;
 
     void _draw_tip_temperature(int offset) {
-        _temperature(offset, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num9);
+        _temperature(offset, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num7);
     }
 
     void _draw_tip_temperature_large(int offset) {
@@ -114,7 +114,7 @@ class Main : public Screen {
                 return;
             }
         }
-        _temperature(offset, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num11);
+        _temperature(offset, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num13);
     }
 
     void _draw_preset(int offset) {
