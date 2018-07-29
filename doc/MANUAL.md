@@ -53,40 +53,13 @@ RT soldering pen has only two buttons: **UP** and **DOWN**. Firmware recognize d
 - **LONG** hold button longer than 1 sec, after 1 sec will be generated action "long"
 - **HOLD** hold button and after 1 sec will be generated repeat actions
 
-### Pressing combinations
-
-- **UP** press, long, hold
-- **DOWN** press, long, hold
-- **BOTH** press, long
-
 ### General operating principles:
 
-##### **PRESS** **UP** or **DOWN**:
-
-- select appropriate value (preset temperatures on main screen)
-- scroll content on screen
-- increase or decrease value
-
-##### **LONG** **UP** or **DOWN**:
-
-- enter edit mode of appropriate value (preset temperatures on main screen)
-
-##### **HOLD** **UP** or **DOWN**:
-
-(autorepeat)
-
-- scroll content on screen
-- increase or decrease value
-
-##### **PRESS** **BOTH**:
-
-- STOP heating
-- exit menu screen
-
-##### **LONG** **BOTH**:
-
-- enter menu screen
-- change item in menu
+|           | **UP**                   | **DOWN**                 | **BOTH**                |
+|-----------|--------------------------|--------------------------|-------------------------|
+| **PRESS** | select, scroll, increase | select, scroll, increase | heating off, exit menu  |
+| **HOLD**  | edit                     | edit                     | enter menu, change item |
+| **LONG**  | scroll, increase         | scroll, decrease         | -                       |
 
 ## Screens
 
