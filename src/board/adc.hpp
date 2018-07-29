@@ -23,6 +23,8 @@ private:
 
     static const unsigned DMA_CH_ADC = 1;
     static const uint16_t MAX_VALUE = 0xfff0;
+    static const int TIP_SENSOR_MAX_VALUE = 65000;
+    static const int TIP_SENSOR_ZERO_VALUE = 200;
 
     io::Adc &r_adc = io::ADC;
     io::Dma &r_dma = io::DMA1;
@@ -58,6 +60,7 @@ private:
     int _actual_tip_temperature_mc = 0;
     int _actual_heater_current_ma = 0;
     bool _tip_sensor_ok = false;
+    bool _tip_sensor_zero = true;
 
     void _start_dma_measure(RawMeasured &raw_measured, const int count) {
         // Configure DMA for ADC
@@ -105,7 +108,8 @@ private:
 
     void _calculate_tip_temperature(const uint16_t raw_tip_temperature) {
         int tmp = raw_tip_temperature;
-        _tip_sensor_ok = tmp <= 65000;
+        _tip_sensor_zero = tmp < TIP_SENSOR_ZERO_VALUE;
+        _tip_sensor_ok = tmp <= TIP_SENSOR_MAX_VALUE;
         if (!_tip_sensor_ok) {
             _actual_tip_temperature_mc = 0;
             return;
@@ -216,6 +220,15 @@ public:
     */
     inline bool is_tip_sensor_ok() {
         return _tip_sensor_ok;
+    }
+
+    /** Last state of tip temperature sensor
+
+    Return:
+        true if is OK
+    */
+    inline bool is_tip_sensor_zero() {
+        return _tip_sensor_zero;
     }
 
     /** HW initialization

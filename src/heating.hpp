@@ -46,7 +46,6 @@ public:
         BROKEN,
     } _heating_element_status = HeatingElementStatus::UNKNOWN;
 
-
     enum class TipSensorStatus {
         UNKNOWN,
         OK,
