@@ -57,7 +57,7 @@ RT soldering pen has only two buttons: **UP** and **DOWN**. Firmware recognize d
 
 |           | **UP**                   | **DOWN**                 | **BOTH**                |
 |-----------|--------------------------|--------------------------|-------------------------|
-| **PRESS** | select, scroll, increase | select, scroll, increase | heating off, exit menu  |
+| **PRESS** | select, increase, scroll | select, decrease, scroll | heating off, exit menu  |
 | **HOLD**  | edit                     | edit                     | enter menu, change item |
 | **LONG**  | scroll, increase         | scroll, decrease         | -                       |
 
