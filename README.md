@@ -24,6 +24,7 @@ Building is possible on Linux, Mac and also on Windows
 ```sh
 git clone https://github.com/pavelrevak/rt_soldering_pen.git
 cd rt_soldering_pen
+git submodule init
 git submodule update --recursive
 ```
 
