@@ -20,7 +20,7 @@ class Heating {
     static const int IDLE_MIN_TIME_MS = 8;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
-    static const int TIP_MAX_CURRENT_MA = 6000;  // mA
+    static const int TIP_MAX_CURRENT_MA = 9000;  // mA
     static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300; // mV
     static const int TIP_RESISTANCE_SHORTED = 500;  // mOhm
     static const int TIP_RESISTANCE_MIN = 1500;  // mOhm
