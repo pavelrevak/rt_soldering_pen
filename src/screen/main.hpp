@@ -14,6 +14,7 @@ class Main : public Screen {
     static const int PRESET_TEMPERATURE_STEP = 10 * 1000;  //  10 degree C
     static const int ROUNDING_TEMPERATURE = 500;
     static const int IDLE_MESSAGE_MS = 5000;
+    static const int WARN_HOT_TIP_TEMP = 50 * 1000;
 
     board::Display::Fb &_fb = board::display.get_fb();
     Heating &_heating;
@@ -99,7 +100,10 @@ class Main : public Screen {
         _temperature(offset, 10, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num22, lib::Font::num7);
     }
 
+    int status_blink = 0;
+
     void _draw_tip_temperature_large(int offset) {
+        if (status_blink++ >= 3) status_blink = 0;
         if (_preset.is_standby()) {
             if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OK) {
                 if (
@@ -116,6 +120,8 @@ class Main : public Screen {
                 _fb.draw_text(offset, 0, " 0H", lib::Font::num32);
                 return;
             }
+            // during standby and temperature is higher than 50 degree Celsius, temperature will blink
+            if (_heating.get_real_tip_temperature_mc() >= WARN_HOT_TIP_TEMP && status_blink > 2) return;
         }
         _temperature(offset, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num13);
     }
@@ -152,8 +158,6 @@ class Main : public Screen {
         _fb.draw_vline(offset + 1, 32 - len, len);
     }
 
-    int status_blink = 0;
-
     void _draw_state(int offset) {
         if (status_blink++ >= 6) status_blink = 0;
         if (_preset.is_standby()) {
@@ -166,7 +170,7 @@ class Main : public Screen {
                     _fb.draw_text(offset + 4, 0, "SHORTED RT TIP!", lib::Font::sans8);
                     return;  // do not show energy
                 }
-                if (_heating.get_real_tip_temperature_mc() < 50000 || status_blink < 4) {
+                if (_heating.get_real_tip_temperature_mc() < WARN_HOT_TIP_TEMP || status_blink < 4) {
                     _fb.draw_text(offset + 39, 0, "STANDBY", lib::Font::sans8);
                 }
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
