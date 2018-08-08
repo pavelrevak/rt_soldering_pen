@@ -26,6 +26,7 @@ class Heating {
     static const int TIP_RESISTANCE_MIN = 1500;  // mOhm
     static const int TIP_RESISTANCE_MAX = 2500;  // mOhm
     static const int TIP_RESISTANCE_BROKEN = 100000;  // mOhm
+    static const int OVERHEAT_TEMPERATURE_MC = 500 * 1000;  // degree Celsius
 
 public:
 
@@ -49,6 +50,7 @@ public:
     enum class TipSensorStatus {
         UNKNOWN,
         OK,
+        OVERHEAT,
         BROKEN,
         SHORTED,
     } _tip_sensor_status = TipSensorStatus::UNKNOWN;
@@ -268,7 +270,11 @@ private:
 
     void _check_tip_sensor() {
         if (board::adc.is_tip_sensor_ok()) {
-            _tip_sensor_status = TipSensorStatus::OK;
+            if (get_real_tip_temperature_mc() < OVERHEAT_TEMPERATURE_MC) {
+                _tip_sensor_status = TipSensorStatus::OK;
+            } else {
+                _tip_sensor_status = TipSensorStatus::OVERHEAT;
+            }
         } else {
             _tip_sensor_status = TipSensorStatus::BROKEN;
             _heating_element_status = HeatingElementStatus::UNKNOWN;
@@ -461,16 +467,15 @@ public:
     /** Start heating cycle
     */
     void start() {
-        int power_mw = 0;
-        if (getTipSensorStatus() != Heating::TipSensorStatus::OK) {
+        if (_preset.is_standby() || getTipSensorStatus() != Heating::TipSensorStatus::OK) {
             _pid.reset();
+            _requested_power_mw = 0;
         } else {
-            power_mw = _pid.process(get_real_tip_temperature_mc(), _preset.get_temperature());
+            _requested_power_mw = _pid.process(get_real_tip_temperature_mc(), _preset.get_temperature());
         }
         _period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
         _remaining_ticks += _period_ticks;
-        _requested_power_mw = power_mw;
-        _requested_power_uw_period_ticks = (uint64_t)power_mw * _period_ticks * 1000;
+        _requested_power_uw_period_ticks = (uint64_t)_requested_power_mw * _period_ticks * 1000;
         _state = State::START;
     }
 
