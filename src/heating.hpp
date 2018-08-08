@@ -12,7 +12,6 @@ class Heating {
 
     static const int PERIOD_TIME_MS = 150;  // ms
     static const int STANDBY_TIME_MS = 30000;  // s
-    static const int PERIOD_TIME_MIN_MS = 50;  // ms
     static const int PID_K_PROPORTIONAL = 700;
     static const int PID_K_INTEGRAL = 200;
     static const int PID_K_DERIVATE = 100;
@@ -86,11 +85,11 @@ private:
     int _average_requested_power = 0;
     int _average_requested_power_short = 0;
 
-    int64_t _ms2ticks(int64_t time_ms) {
+    int64_t _ms2ticks(const int64_t time_ms) const {
         return time_ms * board::Clock::CORE_FREQ / 1000;
     }
 
-    int _ticks2ms(int64_t ticks) {
+    int _ticks2ms(const int64_t ticks) const {
         return ticks * 1000 / board::Clock::CORE_FREQ;
     }
 
@@ -155,7 +154,7 @@ private:
         _measurements_count++;
     }
 
-    int64_t _get_power_energy_uw_period_ticks() {
+    int64_t _get_power_energy_uw_period_ticks() const {
         int64_t energy = _supply_voltage_mv_heat / _measurements_count;
         energy *= _heater_current_ma / _measurements_count;
         energy *= _measure_ticks;
@@ -163,7 +162,7 @@ private:
         return energy;
     }
 
-    bool _check_heating_limits() {
+    bool _check_heating_limits() const {
         // check over current
         if ((_heater_current_ma / _measurements_count) > TIP_MAX_CURRENT_MA) return true;
         // check reached power
@@ -218,7 +217,7 @@ private:
         }
     }
 
-    void _state_heating(unsigned delta_ticks) {
+    void _state_heating(const unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
         if (board::adc.process() != board::Adc::State::DONE) return;
         _cumulate_heating_measured_values();
@@ -237,7 +236,7 @@ private:
         }
     }
 
-    void _state_stabilize(unsigned delta_ticks) {
+    void _state_stabilize(const unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
         if (_measure_ticks < _ms2ticks(STABILIZE_TIME_MS)) return;
         board::adc.measure_idle_start();
@@ -301,7 +300,7 @@ public:
     Return:
         Actual power in mW
     */
-    int get_power_mw() {
+    int get_power_mw() const {
         return _power_mw;
     }
 
@@ -310,7 +309,7 @@ public:
     Return:
         requested power in mW
     */
-    int get_requested_power_mw() {
+    int get_requested_power_mw() const {
         return _requested_power_mw;
     }
 
@@ -319,7 +318,7 @@ public:
     Return:
        heater resistance in mOhm
     */
-    int get_heater_resistance_mo() {
+    int get_heater_resistance_mo() const {
         return _heater_resistance_mo;
     }
 
@@ -328,7 +327,7 @@ public:
     Return:
         total energy in mWh
     */
-    int get_energy_mwh() {
+    int get_energy_mwh() const {
         return _energy_uw_ticks / board::Clock::CORE_FREQ / 1000 / 3600;
     }
 
@@ -337,7 +336,7 @@ public:
     Return:
         steady time in ms
     */
-    int get_steady_ms() {
+    int get_steady_ms() const {
         return _steady_ticks / (board::Clock::CORE_FREQ / 1000);
     }
 
@@ -346,7 +345,7 @@ public:
     Return:
         CPU voltage during heating in mV
     */
-    int get_cpu_voltage_mv_heat() {
+    int get_cpu_voltage_mv_heat() const {
         return _cpu_voltage_mv_heat;
     }
 
@@ -355,7 +354,7 @@ public:
     Return:
         CPU voltage during idle in mV
     */
-    int get_cpu_voltage_mv_idle() {
+    int get_cpu_voltage_mv_idle() const {
         return _cpu_voltage_mv_idle;
     }
 
@@ -364,7 +363,7 @@ public:
     Return:
         supply voltage during heating in mV
     */
-    int get_supply_voltage_mv_heat() {
+    int get_supply_voltage_mv_heat() const {
         return _supply_voltage_mv_heat;
     }
 
@@ -373,7 +372,7 @@ public:
     Return:
         supply voltage during idle in mV
     */
-    int get_supply_voltage_mv_idle() {
+    int get_supply_voltage_mv_idle() const {
         return _supply_voltage_mv_idle;
     }
 
@@ -382,7 +381,7 @@ public:
     Return:
         heater current during heat in mA
     */
-    int get_heater_current_ma() {
+    int get_heater_current_ma() const {
         return _heater_current_ma;
     }
 
@@ -391,7 +390,7 @@ public:
     Return:
         heater current during idle in mA
     */
-    int get_heater_current_ma_error() {
+    int get_heater_current_ma_error() const {
         return _heater_current_ma_error;
     }
 
@@ -400,7 +399,7 @@ public:
     Return:
         supply voltage drop when heating in mV
     */
-    int get_supply_voltage_mv_drop() {
+    int get_supply_voltage_mv_drop() const {
         return _supply_voltage_mv_drop;
     }
 
@@ -410,7 +409,7 @@ public:
     Return:
         CPU temperature in 1/1000 degree Celsius
     */
-    int get_cpu_temperature_mc() {
+    int get_cpu_temperature_mc() const {
         return _cpu_temperature_mc;
     }
 
@@ -420,7 +419,7 @@ public:
     Return:
         TIP temperature in 1/1000 degree Celsius
     */
-    int get_tip_temperature_mc() {
+    int get_tip_temperature_mc() const {
         return _tip_temperature_mc;
     }
 
@@ -429,7 +428,7 @@ public:
     Return:
         TIP temperature in 1/1000 degree Celsius
     */
-    int get_real_tip_temperature_mc() {
+    int get_real_tip_temperature_mc() const {
         return _cpu_temperature_mc + _tip_temperature_mc;
     }
 
@@ -439,7 +438,7 @@ public:
     Return:
         state from enum HeatingElementStatus
     */
-    HeatingElementStatus getHeatingElementStatus() {
+    HeatingElementStatus getHeatingElementStatus() const {
         return _heating_element_status;
     }
 
@@ -450,7 +449,7 @@ public:
     Return:
         state from enum TipSensorStatus
     */
-    TipSensorStatus getTipSensorStatus() {
+    TipSensorStatus getTipSensorStatus() const {
         return _tip_sensor_status;
     }
 
@@ -491,7 +490,7 @@ public:
     Return:
         actual state of heating cycle
     */
-    State process(unsigned delta_ticks) {
+    State process(const unsigned delta_ticks) {
         _uptime_ticks += delta_ticks;
         _remaining_ticks -= delta_ticks;
         _steady_ticks += delta_ticks;
