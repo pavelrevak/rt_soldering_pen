@@ -12,10 +12,10 @@ class Heating {
 
     static const int PERIOD_TIME_MS = 150;  // ms
     static const int STANDBY_TIME_MS = 30000;  // s
-    static const int PID_K_PROPORTIONAL = 700;
-    static const int PID_K_INTEGRAL = 200;
-    static const int PID_K_DERIVATE = 100;
-    static const int HEATING_POWER_MAX = 40 * 1000;  // 20.0 W
+    static const int PID_K_PROPORTIONAL = 450;
+    static const int PID_K_INTEGRAL = 1000;
+    static const int PID_K_DERIVATE = 80;
+    static const int HEATING_POWER_MAX = 40 * 1000;  // mW
     static const int IDLE_MIN_TIME_MS = 8;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
@@ -456,7 +456,7 @@ public:
     /** Initialize module
     */
     void init() {
-        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, 1000 / PERIOD_TIME_MS, HEATING_POWER_MAX);
+        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, HEATING_POWER_MAX);
     }
 
     Preset &get_preset() {
