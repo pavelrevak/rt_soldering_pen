@@ -1,5 +1,7 @@
 #pragma once
 
+#include "lib/minmax.hpp"
+
 class Preset {
 
     static const int PRESETS = 2;
@@ -7,11 +9,8 @@ class Preset {
 
     // temperatures are in 1/1000 degree C
 
-    static const int MIN_TEMPERATURE = 20 * 1000;
-    static const int MAX_TEMPERATURE = 400 * 1000;
-    static const int PRESET_TEMPERATURE_MIN = 20 * 1000;  // 20 degree C
-    static const int PRESET_TEMPERATURE_MAX = 400 * 1000;  // 400 degree C
-    static const int STANDBY_TEMPERATURE = 0;  //  20 degree C
+    static const int PRESET_TEMPERATURE_MIN = 50 * 1000;
+    static const int PRESET_TEMPERATURE_MAX = 400 * 1000;
 
     int _temperatures[PRESETS] = {
         300 * 1000,
@@ -33,7 +32,7 @@ public:
     Return:
         true if is in standby mode
     */
-    bool is_standby() {
+    bool is_standby() const {
         return _standby;
     }
 
@@ -69,8 +68,8 @@ public:
     Return:
         selected temperature or if is in standby it return default standby temperature
     */
-    int get_temperature() {
-        if (_standby) return STANDBY_TEMPERATURE;
+    int get_temperature() const {
+        if (_standby) return 0;
         return _temperatures[_selected];
     }
 
@@ -82,7 +81,8 @@ public:
     Return:
         preset temperature
     */
-    int get_preset(int preset) {
+    int get_preset(const int preset) const {
+        if ((preset < 0) && (preset >= PRESETS)) return 0;
         return _temperatures[preset];
     }
 
@@ -91,7 +91,7 @@ public:
     Return:
         selected preset
     */
-    int get_selected() {
+    int get_selected() const {
         return _selected;
     }
 
@@ -100,7 +100,7 @@ public:
     Return:
         edited preset
     */
-    int get_edited() {
+    int get_edited() const {
         return _edited;
     }
 
@@ -109,7 +109,7 @@ public:
     Return:
         true if is editing
     */
-    bool is_editing() {
+    bool is_editing() const {
         return _edited != NO_EDIT;
     }
 
@@ -121,7 +121,7 @@ public:
     Return:
         true if preset is editing
     */
-    bool is_editing(int preset) {
+    bool is_editing(int preset) const {
         return _edited == preset;
     }
 
@@ -132,12 +132,10 @@ public:
     */
     void edit_add(int val) {
         if (_edited == NO_EDIT) return;
-        _temperatures[_edited] += val;
-        if (_temperatures[_edited] < MIN_TEMPERATURE) {
-            _temperatures[_edited] = MIN_TEMPERATURE;
-        } if (_temperatures[_edited] > MAX_TEMPERATURE) {
-            _temperatures[_edited] = MAX_TEMPERATURE;
-        }
+        _temperatures[_edited] = lib::minmax(
+            _temperatures[_edited] + val,
+            PRESET_TEMPERATURE_MIN,
+            PRESET_TEMPERATURE_MAX);
     }
 
 };
