@@ -112,6 +112,9 @@ class Main : public Screen {
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
                 _fb.draw_text(offset, 0, " --", lib::Font::num32);
                 return;
+            } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OVERHEAT) {
+                _fb.draw_text(offset, 0, " 0H", lib::Font::num32);
+                return;
             }
         }
         _temperature(offset, 0, _heating.get_real_tip_temperature_mc() + 500, lib::Font::num32, lib::Font::num13);
@@ -168,6 +171,8 @@ class Main : public Screen {
                 }
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::BROKEN) {
                 _fb.draw_text(offset + 35, 0, "NO RT TIP", lib::Font::sans8);
+            } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OVERHEAT) {
+                _fb.draw_text(offset + 35, 0, "OVERHEAT!", lib::Font::sans8);
             }
         } else if (_heating.get_steady_ms() > IDLE_MESSAGE_MS && status_blink < 4) {
             _fb.draw_text(offset + 35, 0, "IDLE", lib::Font::sans8);
