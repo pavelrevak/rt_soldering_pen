@@ -40,7 +40,8 @@ class MainClass {
 
 public:
     MainClass() :
-        _display(_heating, _settings) {}
+    _heating(_settings),
+    _display(_heating, _settings) {}
 
     void run() {
         _init_hw();

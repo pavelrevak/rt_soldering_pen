@@ -1,6 +1,7 @@
 #pragma once
 
 #include "lib/minmax.hpp"
+#include "settings.hpp"
 
 class Preset {
 
@@ -12,15 +13,16 @@ class Preset {
     static const int PRESET_TEMPERATURE_MIN = 50 * 1000;
     static const int PRESET_TEMPERATURE_MAX = 400 * 1000;
 
-    int _temperatures[PRESETS] = {
-        300 * 1000,
-        250 * 1000,
-    };
     int _selected = 0;
     int _edited = NO_EDIT;
     bool _standby = true;
 
+    Settings &_settings;
+
 public:
+    Preset(Settings &settings) :
+    _settings(settings) {}
+
     /** Enter standby mode
     */
     void set_standby() {
@@ -70,7 +72,7 @@ public:
     */
     int get_temperature() const {
         if (_standby) return 0;
-        return _temperatures[_selected];
+        return _settings.get_preset_temperature(_selected);
     }
 
     /** Read preset temperature
@@ -83,7 +85,7 @@ public:
     */
     int get_preset(const int preset) const {
         if ((preset < 0) && (preset >= PRESETS)) return 0;
-        return _temperatures[preset];
+        return _settings.get_preset_temperature(preset);
     }
 
     /** Read selected preset
@@ -132,10 +134,10 @@ public:
     */
     void edit_add(int val) {
         if (_edited == NO_EDIT) return;
-        _temperatures[_edited] = lib::minmax(
-            _temperatures[_edited] + val,
+        _settings.set_preset_temperature(_edited, lib::minmax(
+            _settings.get_preset_temperature(_edited) + val,
             PRESET_TEMPERATURE_MIN,
-            PRESET_TEMPERATURE_MAX);
+            PRESET_TEMPERATURE_MAX));
     }
 
 };

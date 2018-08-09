@@ -56,6 +56,7 @@ public:
 
 private:
 
+    Settings &_settings;
     Preset _preset;
     lib::Pid _pid;
 
@@ -295,6 +296,11 @@ private:
     }
 
 public:
+
+    Heating(Settings &settings) :
+    _settings(settings),
+    _preset(settings) {}
+
     /** Getter for actual power
 
     Return:

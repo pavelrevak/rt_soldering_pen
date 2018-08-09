@@ -216,6 +216,7 @@ class Main : public Screen {
         switch (action) {
             case lib::Button::Action::RELEASED_SHORT:
                 _preset.edit_end();
+                _settings.save();
                 break;
             default:
                 break;
