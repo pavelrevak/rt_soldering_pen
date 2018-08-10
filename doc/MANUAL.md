@@ -7,7 +7,7 @@
 - Supply current: pulse peaks to 6A @12V (average resistance of RT heating elements is 2 Ohm, so current depends on supply voltage)
 - Supply current in idle: max 15mA
 - Regulation: PSD (PID) regulator with PWM power transfer (150ms period)
-- Set-point temperature: 20°C - 400°C
+- Set-point temperature: 50°C - 400°C
 - Maximum measurable tip temperature: 530°C + ambient temperature
 - Maximum heating power: is limited by SW to 40W or by supply voltage: 40W @11V, 20W @8V
 - Heating speed: 30°C -> 300°C: about 4s with RT-2 pen and 40W limit
@@ -74,7 +74,7 @@ Actually there are two screens.
 Show very basic information
 
 - preset temperatures and selected preset (with arrow)
-- actual TIP temperature (if no TIP is attached, CPU temperature is shown)
+- actual TIP temperature (if no TIP is attached, `--` is shown, if is detected error on pen, `Err` is shown)
 - bar-graph - actual heating power.
 
 #### Advanced mode
@@ -90,6 +90,7 @@ Show some verbose information:
   - `NO RT TIP` - RT TIP is not attached (or TIP has broken temperature sensor)
   - `STANDBY` - standby mode (no heating), if blink: temperature is over 50°C
   - `IDLE` -  if during heating is not detected any work, after 5 sec is shown this message and after 30 sec is set standby mode
+  - `OVERHEAT` - temperature of the TIP is higher than 500°C. (this can hapened due an error) if high temperature is detected, immediatelly is put into standby.
   - `BROKEN RT TIP!` - TIP has broken heating element (heating element resistance is more than 100 Ohm)
   - `SHORTED RT TIP!` - TIP has shorted heating element (heating element resistance is lower than 0.5 Ohm)
 - actual heating power
