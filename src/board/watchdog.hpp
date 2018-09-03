@@ -17,8 +17,8 @@ public:
         unsigned prediv = io::Iwdg::Pr::Pre::DIV_4;
         unsigned reload = time_ms * WATCHDOG_FREQUENCY / 1000;
         unsigned window = window_time_ms * WATCHDOG_FREQUENCY / 1000;
-        reload /= 1 << (prediv + 2);
-        window /= 1 << (prediv + 2);
+        reload /= static_cast<unsigned>(1 << (prediv + 2));
+        window /= static_cast<unsigned>(1 << (prediv + 2));
         while (reload > io::Iwdg::Rlr::Rl::MAX) {
             prediv++;
             reload >>= 1;

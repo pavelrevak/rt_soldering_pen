@@ -61,13 +61,13 @@ private:
     lib::Pid _pid;
 
     uint64_t _uptime_ticks = 0;
-    int64_t _requested_power_uw_period_ticks = 0;  // uW * _period_ticks
+    int64_t _requested_power_uw_period_ticks = 0;  // uW * _required_period_ticks
     int64_t _energy_uw_ticks = 0;  // uW * CORE_FREQ
     int64_t _steady_ticks = 0;  // ticks when power is steady
-    int _period_ticks = 0;
-    int _remaining_ticks = 0;
+    unsigned _required_period_ticks = 0;
+    unsigned _period_ticks = 0;
 
-    int _measure_ticks = 0;
+    unsigned _measure_ticks = 0;
     int _measurements_count = 0;
 
     int _requested_power_mw = 0;  // mW
@@ -171,7 +171,7 @@ private:
         // check low voltage
         if (_supply_voltage_mv_heat / _measurements_count < SUPPLY_VOLTAGE_HEATING_MIN_MV) return true;
         // check reached time
-        if (_remaining_ticks <= _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS)) return true;
+        if (_period_ticks > (_required_period_ticks - _ms2ticks(STABILIZE_TIME_MS + IDLE_MIN_TIME_MS))) return true;
         // OK
         return false;
     }
@@ -180,7 +180,7 @@ private:
         int64_t power_uw_period_ticks = _supply_voltage_mv_heat;
         power_uw_period_ticks *= _heater_current_ma;
         power_uw_period_ticks *= _measure_ticks;
-        _power_mw = static_cast<int>(power_uw_period_ticks / _period_ticks / 1000);
+        _power_mw = static_cast<int>(power_uw_period_ticks / _required_period_ticks / 1000);
         _energy_uw_ticks += power_uw_period_ticks;
         _measure_ticks = 0;
     }
@@ -284,7 +284,7 @@ private:
     void _state_idle() {
         if (board::adc.process() != board::Adc::State::DONE) return;
         _cumulate_idle_measured_values();
-        if (_remaining_ticks > 0) {
+        if (_period_ticks < _required_period_ticks) {
             // continue in idle
             board::adc.measure_idle_start();
         } else {
@@ -478,9 +478,13 @@ public:
         } else {
             _requested_power_mw = _pid.process(get_real_tip_temperature_mc(), _preset.get_temperature());
         }
-        _period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
-        _remaining_ticks += _period_ticks;
-        _requested_power_uw_period_ticks = static_cast<uint64_t>(_requested_power_mw * _period_ticks * 1000);
+        _required_period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
+        if (_period_ticks < _required_period_ticks) {
+            _period_ticks = 0;
+        } else {
+            _period_ticks -= _required_period_ticks;
+        }
+        _requested_power_uw_period_ticks = 1000ll * _requested_power_mw * _required_period_ticks;
         _state = State::START;
     }
 
@@ -498,7 +502,7 @@ public:
     */
     State process(const unsigned delta_ticks) {
         _uptime_ticks += delta_ticks;
-        _remaining_ticks -= delta_ticks;
+        _period_ticks += delta_ticks;
         _steady_ticks += delta_ticks;
         switch (_state) {
         case State::STOP:

@@ -33,11 +33,11 @@ public:
         if (y >= HEIGHT) return;
         if (width < 0) {
             while (width++ && x > 0) {
-                fb[x--] |= (y < 0) ? (*bitmap++ >> (-y)) : (*bitmap++ << y);
+                fb[x--] |= (y < 0) ? static_cast<FB_t>(*bitmap++ >> (-y)) : static_cast<FB_t>(*bitmap++ << y);
             }
         }
         while (width-- && x < WIDTH) {
-            fb[x++] |= (y < 0) ? (*bitmap++ >> (-y)) : (*bitmap++ << y);
+            fb[x++] |= (y < 0) ? static_cast<FB_t>(*bitmap++ >> (-y)) : static_cast<FB_t>(*bitmap++ << y);
         }
     }
 
@@ -60,12 +60,12 @@ public:
             y = 0;
             len += y;
         }
-        fb[x] |= ((1 << len) - 1) << y;
+        fb[x] |= static_cast<FB_t>(((1 << len) - 1) << y);
     }
 
     template <typename F>
     int draw_char(int x, int y, const char ch, const F *font) {
-        int spacing = font[1];
+        unsigned spacing = font[1];
         font += 2;
         while (*font != ch) {
             if (*font == 0) return 0;
@@ -73,9 +73,9 @@ public:
             font += *font + 1;
         }
         font++;
-        int width = *font++;
+        int width = static_cast<int>(*font++);
         draw_bitmap(x, y, width, font);
-        return width + spacing;
+        return width + static_cast<int>(spacing);
     }
 
     template <typename F>

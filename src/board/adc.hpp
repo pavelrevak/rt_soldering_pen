@@ -62,7 +62,7 @@ private:
     bool _tip_sensor_ok = false;
     bool _tip_sensor_zero = true;
 
-    void _start_dma_measure(RawMeasured &raw_measured, const int count) {
+    void _start_dma_measure(RawMeasured &raw_measured, const size_t count) {
         // Configure DMA for ADC
         r_dma.IFCR.clear_flags(DMA_CH_ADC);
         r_dma_adc.CCR.r = 0x00000000;

@@ -20,8 +20,8 @@ class Display {
         &_screen_menu,
     };
 
-    static const int BUTTONS_SAMPLE_TICKS = board::Clock::CORE_FREQ / 1000 * 10;  // ticks
-    int _buttons_sample_ticks = 0;
+    static const unsigned BUTTONS_SAMPLE_TICKS = board::Clock::CORE_FREQ / 1000 * 10;  // ticks
+    unsigned _buttons_sample_ticks = 0;
     lib::Button _button_up;
     lib::Button _button_dw;
     lib::Button _button_both;

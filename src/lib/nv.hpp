@@ -95,8 +95,12 @@ public:
         _last_data = _nv;
     }
 
+    size_t used() const {
+        return static_cast<size_t>(_last_data - _nv);
+    }
+
     size_t free() const {
-        return (board::Flash::BLOCK_SIZE / sizeof(uint16_t)) - (_last_data - _nv);
+        return (board::Flash::BLOCK_SIZE / sizeof(uint16_t)) - used();
     }
 
 };

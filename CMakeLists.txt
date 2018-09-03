@@ -34,6 +34,7 @@ add_compile_options(
     -Wextra
     -Wcast-align
     -Wconversion
+    -Wsign-conversion
     -Wold-style-cast
     -pedantic
 )

@@ -20,9 +20,9 @@ private:
     GpioPin<io::base::GPIOA, 9> scl;
     GpioPin<io::base::GPIOA, 10> sda;
 
-    static const int BLOCK_SIZE = 255;
+    static const size_t BLOCK_SIZE = 255;
 
-    int data_len = 0;
+    size_t data_len = 0;
 
     volatile bool busy = false;
 
@@ -48,7 +48,7 @@ public:
         io::NVIC.iser(io::isr::I2C1_isr);
     }
 
-    bool write(const uint8_t addr, const uint8_t *data, int len) {
+    bool write(const uint8_t addr, const uint8_t *data, size_t len) {
         if (busy) return false;
         busy = true;
 
@@ -67,7 +67,7 @@ public:
         dma_i2c_tx_ccr.b.PL = static_cast<uint32_t>(io::Dma::Channel::Ccr::Pl::LOW);
         r_dma_i2c_tx.CCR.r = dma_i2c_tx_ccr.r;
 
-        int block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
+        size_t block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
         data_len -= block_len;
 
         io::I2c::Cr2 cr2(0);
@@ -83,7 +83,7 @@ public:
 
     void handler() {
         if (data_len > 0 && r_i2c.ISR.b.TCR) {
-            int block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
+            size_t block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
             data_len -= block_len;
             io::I2c::Cr2 cr2(r_i2c.CR2.r);
             cr2.b.NBYTES = 0xff & block_len;
