@@ -27,11 +27,15 @@ add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-use-cxa-atexit>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>
-    -Wall
-    -pedantic
-    -Wextra
     -fstrict-volatile-bitfields
     -ffunction-sections
+    -Werror
+    -Wall
+    -Wextra
+    -Wcast-align
+    -Wconversion
+    -Wold-style-cast
+    -pedantic
 )
 
 include_directories(

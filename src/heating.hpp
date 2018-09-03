@@ -91,7 +91,7 @@ private:
     }
 
     int _ticks2ms(const int64_t ticks) const {
-        return ticks * 1000 / board::Clock::CORE_FREQ;
+        return static_cast<int>(ticks * 1000 / board::Clock::CORE_FREQ);
     }
 
     void _state_stop() {
@@ -180,7 +180,7 @@ private:
         int64_t power_uw_period_ticks = _supply_voltage_mv_heat;
         power_uw_period_ticks *= _heater_current_ma;
         power_uw_period_ticks *= _measure_ticks;
-        _power_mw = power_uw_period_ticks / _period_ticks / 1000;
+        _power_mw = static_cast<int>(power_uw_period_ticks / _period_ticks / 1000);
         _energy_uw_ticks += power_uw_period_ticks;
         _measure_ticks = 0;
     }
@@ -334,7 +334,7 @@ public:
         total energy in mWh
     */
     int get_energy_mwh() const {
-        return _energy_uw_ticks / board::Clock::CORE_FREQ / 1000 / 3600;
+        return static_cast<int>(_energy_uw_ticks / board::Clock::CORE_FREQ / 1000 / 3600);
     }
 
     /** Getter how long is steady
@@ -343,7 +343,7 @@ public:
         steady time in ms
     */
     int get_steady_ms() const {
-        return _steady_ticks / (board::Clock::CORE_FREQ / 1000);
+        return static_cast<int>(_steady_ticks / (board::Clock::CORE_FREQ / 1000));
     }
 
     /** Getter for CPU voltage during heating
@@ -480,7 +480,7 @@ public:
         }
         _period_ticks = PERIOD_TIME_MS * (board::Clock::CORE_FREQ / 1000);
         _remaining_ticks += _period_ticks;
-        _requested_power_uw_period_ticks = (uint64_t)_requested_power_mw * _period_ticks * 1000;
+        _requested_power_uw_period_ticks = static_cast<uint64_t>(_requested_power_mw * _period_ticks * 1000);
         _state = State::START;
     }
 

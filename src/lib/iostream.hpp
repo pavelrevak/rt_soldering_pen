@@ -12,7 +12,7 @@ namespace lib {
 */
 class IStream {
 protected:
-    IFile *file_in = NULL;
+    IFile *file_in = nullptr;
 
 public:
     IStream() {}
@@ -36,7 +36,7 @@ public:
 */
 class OStream {
 protected:
-    OFile *file_out = NULL;
+    OFile *file_out = nullptr;
 
 public:
     OStream() {}
@@ -121,7 +121,7 @@ public:
     OStream &hex(T x, int count) {
         while (count-- > 0) {
             char digit = (x >> (count << 2)) & 0x0f;
-            c((digit < 10) ? '0' + digit : 'a' - 10 + digit);
+            c(static_cast<char>((digit < 10) ? '0' + digit : 'a' - 10 + digit));
         }
         return *this;
     }
@@ -212,10 +212,10 @@ public:
             count--;
         }
         while (modulo) {
-            char digit = x / modulo;
+            char digit = static_cast<char>(x / modulo);
             x %= modulo;
             modulo /= 10;
-            c(digit + '0');
+            c(static_cast<char>(digit + '0'));
         }
         return *this;
     }
@@ -256,10 +256,10 @@ public:
             c('-');
         }
         while (modulo) {
-            char digit = x / modulo;
+            char digit = static_cast<char>(x / modulo);
             x %= modulo;
             modulo /= 10;
-            c(digit + '0');
+            c(static_cast<char>(digit + '0'));
         }
         return *this;
     }

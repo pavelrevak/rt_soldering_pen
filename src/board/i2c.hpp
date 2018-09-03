@@ -55,24 +55,24 @@ public:
         data_len = len;
         r_dma.IFCR.clear_flags(DMA_CH_I2C_TX);
         r_dma_i2c_tx.CCR.r = 0x00000000;
-        r_dma_i2c_tx.CMAR.MAR = (uint32_t)data;
-        r_dma_i2c_tx.CPAR.PAR = (uint32_t)&r_i2c.TXDR.TXDATA;
+        r_dma_i2c_tx.CMAR.MAR = reinterpret_cast<const uint32_t>(data);
+        r_dma_i2c_tx.CPAR.PAR = reinterpret_cast<const uint32_t>(&r_i2c.TXDR.TXDATA);
         r_dma_i2c_tx.CNDTR.NDT = data_len;
         io::Dma::Channel::Ccr dma_i2c_tx_ccr(0x00000000);
         dma_i2c_tx_ccr.b.EN = true;
         dma_i2c_tx_ccr.b.DIR = true;
         dma_i2c_tx_ccr.b.MINC = true;
-        dma_i2c_tx_ccr.b.PSIZE = (uint32_t)io::Dma::Channel::Ccr::Size::SIZE_8;
-        dma_i2c_tx_ccr.b.MSIZE = (uint32_t)io::Dma::Channel::Ccr::Size::SIZE_8;
-        dma_i2c_tx_ccr.b.PL = (uint32_t)io::Dma::Channel::Ccr::Pl::LOW;
+        dma_i2c_tx_ccr.b.PSIZE = static_cast<uint32_t>(io::Dma::Channel::Ccr::Size::SIZE_8);
+        dma_i2c_tx_ccr.b.MSIZE = static_cast<uint32_t>(io::Dma::Channel::Ccr::Size::SIZE_8);
+        dma_i2c_tx_ccr.b.PL = static_cast<uint32_t>(io::Dma::Channel::Ccr::Pl::LOW);
         r_dma_i2c_tx.CCR.r = dma_i2c_tx_ccr.r;
 
         int block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
         data_len -= block_len;
 
         io::I2c::Cr2 cr2(0);
-        cr2.b.SADD = addr << 1;
-        cr2.b.NBYTES = block_len;
+        cr2.b.SADD = 0x03ff & (addr << 1);
+        cr2.b.NBYTES = 0xff & block_len;
         cr2.b.RELOAD = data_len > 0;
         cr2.b.AUTOEND = data_len == 0;
         r_i2c.CR2.r = cr2.r;
@@ -86,7 +86,7 @@ public:
             int block_len = (data_len > BLOCK_SIZE) ? BLOCK_SIZE : data_len;
             data_len -= block_len;
             io::I2c::Cr2 cr2(r_i2c.CR2.r);
-            cr2.b.NBYTES = block_len;
+            cr2.b.NBYTES = 0xff & block_len;
             cr2.b.RELOAD = data_len > 0;
             cr2.b.AUTOEND = data_len == 0;
             r_i2c.CR2.r = cr2.r;

@@ -8,7 +8,7 @@ const uint8_t Display::init_cmds[] = {
     Ssd1306::CO_CMD,
     Ssd1306::DISPLAYOFF,
     Ssd1306::SETDISPLAYCLOCKDIV, 0xf0,
-    Ssd1306::SETMULTIPLEX, (uint8_t)(DISPLAY_HEIGHT - 1),
+    Ssd1306::SETMULTIPLEX, static_cast<uint8_t>(DISPLAY_HEIGHT - 1),
     Ssd1306::SETDISPLAYOFFSET, 0x00,
     Ssd1306::SETSTARTLINE,
     Ssd1306::SETSEGREMAPDEC,
@@ -21,8 +21,8 @@ const uint8_t Display::init_cmds[] = {
     Ssd1306::SETVCOMDESELECT, 0x40,
     Ssd1306::DISPLAYALLON_RESUME,
     Ssd1306::NORMALDISPLAY,
-    Ssd1306::COLUMNADDR, 0, (uint8_t)(DISPLAY_WIDTH - 1),
-    Ssd1306::PAGEADDR, 0, (uint8_t)(DISPLAY_HEIGHT / 8 - 1),
+    Ssd1306::COLUMNADDR, 0, static_cast<uint8_t>(DISPLAY_WIDTH - 1),
+    Ssd1306::PAGEADDR, 0, static_cast<uint8_t>(DISPLAY_HEIGHT / 8 - 1),
     Ssd1306::DISPLAYON,
 };
 

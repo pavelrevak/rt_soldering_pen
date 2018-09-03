@@ -27,8 +27,8 @@ class Nv {
             Header header;
             uint16_t raw;
         };
-        header.key = key;
-        header.size = size;
+        header.key = key & 0x0fff;
+        header.size = size & 0x07;
         header.val = val;
         return raw;
     }
@@ -36,7 +36,7 @@ class Nv {
     static const volatile uint16_t _nv[board::Flash::BLOCK_SIZE / sizeof(uint16_t)];
     const volatile uint16_t *_last_data = nullptr;
 
-    const volatile uint16_t *_find_key(const uint16_t key, const uint16_t size=0) const {
+    const volatile uint16_t *_find_key(const uint16_t key, const uint8_t size=0) const {
         const volatile uint16_t *header_last = nullptr;
         const volatile uint16_t *nv = _nv;
         while (*nv != board::Flash::ERASED_DATA) {
@@ -49,7 +49,7 @@ class Nv {
         return header_last;
     }
 
-    void _add_data(const uint16_t key, const bool val, const uint16_t *data=nullptr, uint16_t size=0) {
+    void _add_data(const uint16_t key, const bool val, const uint16_t *data=nullptr, uint8_t size=0) {
         uint16_t header = _from_head(key, size, val);
         board::Flash::flash_write16(_last_data++, header);
         while (size--) {
