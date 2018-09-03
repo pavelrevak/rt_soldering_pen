@@ -44,7 +44,7 @@ public:
         preset: preset number to enable
     */
     void select(int preset) {
-        if ((preset < 0) && (preset >= PRESETS)) return;
+        if ((preset < 0) || (preset >= PRESETS)) return;
         _selected = preset;
         _standby = false;
     }
@@ -55,7 +55,7 @@ public:
         preset: preset number to edit
     */
     void edit_select(int preset) {
-        if ((preset < 0) && (preset >= PRESETS)) return;
+        if ((preset < 0) || (preset >= PRESETS)) return;
         _edited = preset;
     }
 
@@ -84,7 +84,7 @@ public:
         preset temperature
     */
     int get_preset(const int preset) const {
-        if ((preset < 0) && (preset >= PRESETS)) return 0;
+        if ((preset < 0) || (preset >= PRESETS)) return 0;
         return _settings.get_preset_temperature(preset);
     }
 
