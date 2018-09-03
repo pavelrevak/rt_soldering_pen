@@ -9,9 +9,9 @@
 namespace board {
 
 class Display {
-    board::I2c &i2c;
+    board::I2c &_i2c;
 
-    GpioPin<io::base::GPIOA, 15> oled_nrst;
+    GpioPin<io::base::GPIOA, 15> _oled_nrst;
 
     typedef uint32_t HEIGHT_TYPE;
 
@@ -40,22 +40,22 @@ public:
         return fb_cmds.fb;
     }
 
-    Display(board::I2c &i2c) : i2c(i2c) {}
+    Display(board::I2c &i2c) : _i2c(i2c) {}
 
     void init_hw() {
-        oled_nrst.clr();
-        oled_nrst.configure_output().configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::LOW).clr();
+        _oled_nrst.clr();
+        _oled_nrst.configure_output().configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::LOW).clr();
     }
 
     void redraw() {
-        while (i2c.is_busy());
-        i2c.write(0x3c, fb_cmds.display_buffer_cmds, FbCmds::FB_SIZE);
+        while (_i2c.is_busy());
+        _i2c.write(0x3c, fb_cmds.display_buffer_cmds, FbCmds::FB_SIZE);
     }
 
     void init() {
         fb_cmds.fb.clear();
-        oled_nrst.set();
-        i2c.write(0x3c, init_cmds, sizeof(init_cmds));
+        _oled_nrst.set();
+        _i2c.write(0x3c, init_cmds, sizeof(init_cmds));
         redraw();
     }
 
@@ -65,8 +65,8 @@ public:
             x ? Ssd1306::SETSEGREMAPINC : Ssd1306::SETSEGREMAPDEC,
             y ? Ssd1306::COMSCANINC : Ssd1306::COMSCANDEC,
         };
-        while (i2c.is_busy());
-        i2c.write(0x3c, rotate_cmds, sizeof(rotate_cmds));
+        while (_i2c.is_busy());
+        _i2c.write(0x3c, rotate_cmds, sizeof(rotate_cmds));
     }
 };
 

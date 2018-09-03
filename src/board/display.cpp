@@ -2,7 +2,7 @@
 
 namespace board {
 
-Display display(i2c);
+Display display(i2c_driver);
 
 const uint8_t Display::init_cmds[] = {
     Ssd1306::CO_CMD,

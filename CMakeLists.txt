@@ -36,6 +36,7 @@ add_compile_options(
     -Wconversion
     -Wsign-conversion
     -Wold-style-cast
+    -Wshadow
     -pedantic
 )
 

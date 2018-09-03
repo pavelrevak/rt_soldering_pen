@@ -104,6 +104,6 @@ public:
     }
 };
 
-extern I2c i2c;
+extern I2c i2c_driver;
 
 }

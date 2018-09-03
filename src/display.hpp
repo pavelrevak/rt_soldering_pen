@@ -56,7 +56,7 @@ class Display {
     }
 
     void _draw() {
-        if (board::i2c.is_busy()) return;
+        if (board::i2c_driver.is_busy()) return;
         bool rotation = _settings.get_left_handed();
         if (rotation_last != rotation) {
             rotation_last = rotation;

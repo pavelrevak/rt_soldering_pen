@@ -33,7 +33,7 @@ class MainClass {
         board::heater.init_hw();
         board::buttons.init_hw();
         board::adc.init_hw();
-        board::i2c.init_hw();
+        board::i2c_driver.init_hw();
         board::display.init_hw();
         board::Watchdog::enable(200, 100);  // time and window in ms
     }
