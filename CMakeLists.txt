@@ -38,6 +38,7 @@ add_compile_options(
     -Wold-style-cast
     -Wshadow
     -Wlogical-op
+    -Wsuggest-override
     -pedantic
 )
 

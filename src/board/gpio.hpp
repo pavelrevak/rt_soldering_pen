@@ -140,21 +140,21 @@ public:
     /**
      * @brief Clear output (set to low)
      */
-    inline void clr() {
+    inline void clr() override {
         r_gpio.BSRR.clr(Pin);
     }
 
     /**
      * @brief Set output (set to high)
      */
-    inline void set() {
+    inline void set() override {
         r_gpio.BSRR.set(Pin);
     }
 
     /**
      * @brief Set output (set to value)
      */
-    inline void set(const bool val) {
+    inline void set(const bool val) override {
         if (val) r_gpio.BSRR.set(Pin);
         else r_gpio.BSRR.clr(Pin);
     }
@@ -162,7 +162,7 @@ public:
     /**
      * @brief Toggle output (invert)
      */
-    inline void toggle() {
+    inline void toggle() override {
         set(!get());
     }
 
@@ -171,7 +171,7 @@ public:
      *
      * @return output value
      */
-    inline bool get() const {
+    inline bool get() const override {
         return r_gpio.ODR.get(Pin);
     }
 
@@ -180,7 +180,7 @@ public:
      *
      * @return input value
      */
-    inline bool get_input() const {
+    inline bool get_input() const override {
         return r_gpio.IDR.get(Pin);
     }
 };
