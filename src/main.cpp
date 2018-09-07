@@ -27,13 +27,13 @@ class MainClass {
     }
 
     void _init_hw() {
-        board::clock.init_hw();
-        board::systick.init_hw();
+        board::Clock::get_instance().init_hw();
+        board::Systick::get_instance().init_hw();
         // board::debug.init_hw();
-        board::heater.init_hw();
-        board::buttons.init_hw();
-        board::adc.init_hw();
-        board::i2c_driver.init_hw();
+        board::Heater::get_instance().init_hw();
+        board::Buttons::get_instance().init_hw();
+        board::Adc::get_instance().init_hw();
+        board::I2c::get_instance().init_hw();
         board::display.init_hw();
         board::Watchdog::enable(200, 100);  // time and window in ms
     }
@@ -52,11 +52,11 @@ public:
         _heating.start();
 
         // board::debug.dbg << lib::IOStream::endl << "started.." << lib::IOStream::endl;
-        last_ticks = board::systick.get_counter();
+        last_ticks = board::Systick::get_instance().get_counter();
 
         while (true) {
             unsigned delta_ticks = last_ticks;
-            last_ticks = board::systick.get_counter();
+            last_ticks = board::Systick::get_instance().get_counter();
             delta_ticks = ((1 << board::Systick::DIV_BITS) - 1) & (delta_ticks - last_ticks);
             _process(delta_ticks);
         }

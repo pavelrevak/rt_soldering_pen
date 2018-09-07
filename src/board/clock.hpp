@@ -39,8 +39,12 @@ public:
         io::RCC.APB2ENR.b.ADC = true;
         io::RCC.APB1ENR.b.I2C1 = true;
     }
-};
 
-extern Clock clock;
+    static Clock &get_instance() {
+        static Clock instance;
+        return instance;
+    }
+
+};
 
 }

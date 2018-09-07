@@ -11,7 +11,7 @@ namespace screen {
 
 class Main : public Screen {
 
-    static const int PRESET_TEMPERATURE_STEP = 10 * 1000;  //  10 degree C
+    static const int PRESET_TEMPERATURE_STEP = 5 * 1000;  //  10 degree C
     static const int ROUNDING_TEMPERATURE = 500;
     static const int IDLE_MESSAGE_MS = 5000;
     static const int WARN_HOT_TIP_TEMP = 50 * 1000;

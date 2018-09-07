@@ -35,11 +35,11 @@ class Display {
         bool btn_state_up;
         bool btn_state_dw;
         if (_settings.get_left_handed()) {
-            btn_state_up = board::buttons.is_pressed_dw();
-            btn_state_dw = board::buttons.is_pressed_up();
+            btn_state_up = board::Buttons::get_instance().is_pressed_dw();
+            btn_state_dw = board::Buttons::get_instance().is_pressed_up();
         } else {
-            btn_state_up = board::buttons.is_pressed_up();
-            btn_state_dw = board::buttons.is_pressed_dw();
+            btn_state_up = board::Buttons::get_instance().is_pressed_up();
+            btn_state_dw = board::Buttons::get_instance().is_pressed_dw();
         }
         _button_up.process(btn_state_up, btn_state_dw, 10);
         _button_dw.process(btn_state_dw, btn_state_up, 10);
@@ -56,7 +56,7 @@ class Display {
     }
 
     void _draw() {
-        if (board::i2c_driver.is_busy()) return;
+        if (board::I2c::get_instance().is_busy()) return;
         bool rotation = _settings.get_left_handed();
         if (rotation_last != rotation) {
             rotation_last = rotation;

@@ -4,17 +4,25 @@
 
 class Settings {
 
+    struct Default {
+        static const uint16_t PRESET_TEMPERATURE1 = 300;
+        static const uint16_t PRESET_TEMPERATURE2 = 250;
+        static const uint16_t STANDBY_TIMEOUT = 30;
+    };
+
     enum Keys : uint32_t {
         ADVANCED_MODE,
         FAHRENHEIT,
         LEFT_HANDED,
         PRESET_TEMPERATURE1,
         PRESET_TEMPERATURE2,
+        STANDBY_TIMEOUT,
     };
 
     lib::Nv nv;
 
     uint16_t _preset_temperatures[2];
+    uint16_t _standby_timeout;
     bool _advanced_mode;
     bool _fahrenheit;
     bool _left_handed;
@@ -27,8 +35,9 @@ public:
         _advanced_mode = nv.load_bool(ADVANCED_MODE, false);
         _fahrenheit = nv.load_bool(FAHRENHEIT, false);
         _left_handed = nv.load_bool(LEFT_HANDED, false);
-        _preset_temperatures[0] = nv.load_u16(PRESET_TEMPERATURE1, 300);
-        _preset_temperatures[1] = nv.load_u16(PRESET_TEMPERATURE2, 250);
+        _preset_temperatures[0] = nv.load_u16(PRESET_TEMPERATURE1, Default::PRESET_TEMPERATURE1);
+        _preset_temperatures[1] = nv.load_u16(PRESET_TEMPERATURE2, Default::PRESET_TEMPERATURE2);
+        _standby_timeout = nv.load_u16(STANDBY_TIMEOUT, Default::STANDBY_TIMEOUT);
     }
 
     void save() {
@@ -86,5 +95,14 @@ public:
 
     void set_preset_temperature(const int preset, const int val) {
         _preset_temperatures[preset] = static_cast<uint16_t>(val / 1000);
+    }
+
+
+    int get_standby_timeout() const {
+        return static_cast<int>(_standby_timeout) * 1000;
+    }
+
+    void set_standby_timeout(const int val) {
+        _standby_timeout = static_cast<uint16_t>(val / 1000);
     }
 };

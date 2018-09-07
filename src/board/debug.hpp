@@ -28,8 +28,12 @@ public:
         // NVIC
         io::NVIC.iser(io::isr::USART1_isr);
     }
-};
 
-extern Debug debug;
+    static Debug &get_instance() {
+        static Debug instance;
+        return instance;
+    }
+
+};
 
 }

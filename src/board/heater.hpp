@@ -22,8 +22,12 @@ public:
     void off() {
         output.clr();
     }
-};
 
-extern Heater heater;
+    static Heater &get_instance() {
+        static Heater instance;
+        return instance;
+    }
+
+};
 
 }

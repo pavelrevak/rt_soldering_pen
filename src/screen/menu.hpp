@@ -21,7 +21,7 @@ class Menu : public Screen {
             TEXT,
             VALUE_INT,
             VALUE_DEC,
-            EDIT_BINARY,
+            VALUE_BINARY,
             END,
         };
 
@@ -30,7 +30,7 @@ class Menu : public Screen {
         int value;
         uint8_t dp;
         ItemType item_type;
-        bool updated;
+        bool editable;
     };
 
     enum MenuItems {
@@ -64,22 +64,22 @@ class Menu : public Screen {
             nullptr,
             0,
             0,
-            MenuItem::ItemType::EDIT_BINARY,
-            false,
+            MenuItem::ItemType::VALUE_BINARY,
+            true,
         }, {
             "Fahrenheit:",
             nullptr,
             0,
             0,
-            MenuItem::ItemType::EDIT_BINARY,
-            false,
+            MenuItem::ItemType::VALUE_BINARY,
+            true,
         }, {
             "Left handed:",
             nullptr,
             0,
             0,
-            MenuItem::ItemType::EDIT_BINARY,
-            false,
+            MenuItem::ItemType::VALUE_BINARY,
+            true,
         }, {
             "Total energy:",
             " Wh",
@@ -133,17 +133,10 @@ class Menu : public Screen {
     };
 
     void _draw_menu_item_cursor(int y_pos, const MenuItem &menu_item) {
-        switch (menu_item.item_type) {
-        // case MenuItem::ItemType::VALUE_INT:
-        // case MenuItem::ItemType::VALUE_DEC:
-        //     _fb.draw_char(0, y_pos, '\275', lib::Font::sans8);
-        //     break;
-        case MenuItem::ItemType::EDIT_BINARY:
+        if (menu_item.editable) {
             _fb.draw_char(0, y_pos, '\276', lib::Font::sans8);
-            break;
-        default:
+        } else {
             _fb.draw_char(0, y_pos, '\274', lib::Font::sans8);
-            break;
         }
     }
 
@@ -161,7 +154,7 @@ class Menu : public Screen {
         case MenuItem::ItemType::VALUE_DEC:
             ss.dec(menu_item.value, 1, menu_item.dp);
             break;
-        case MenuItem::ItemType::EDIT_BINARY:
+        case MenuItem::ItemType::VALUE_BINARY:
             if (menu_item.value) {
                 ss << "ON";
             } else {

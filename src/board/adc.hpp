@@ -173,7 +173,7 @@ public:
     Return:
         CPU voltage in mV
     */
-    inline int get_cpu_voltage_mv() {
+    int get_cpu_voltage_mv() {
         return _actual_cpu_voltage_mv;
     }
 
@@ -182,7 +182,7 @@ public:
     Return:
         supply voltage in mV
     */
-    inline int get_supply_voltage_mv() {
+    int get_supply_voltage_mv() {
         return _actual_supply_voltage_mv;
     }
 
@@ -191,7 +191,7 @@ public:
     Return:
         CPU temperature in 1/1000 degree Celsius
     */
-    inline int get_cpu_temperature_mc() {
+    int get_cpu_temperature_mc() {
         return _actual_cpu_temperature_mc;
     }
 
@@ -200,7 +200,7 @@ public:
     Return:
         CPU temperature in 1/1000 degree Celsius
     */
-    inline int get_tip_temperature_mc() {
+    int get_tip_temperature_mc() {
         return _actual_tip_temperature_mc;
     }
 
@@ -209,7 +209,7 @@ public:
     Return:
         heater current in mA
     */
-    inline int get_heater_current_ma() {
+    int get_heater_current_ma() {
         return _actual_heater_current_ma;
     }
 
@@ -218,7 +218,7 @@ public:
     Return:
         true if is OK
     */
-    inline bool is_tip_sensor_ok() {
+    bool is_tip_sensor_ok() {
         return _tip_sensor_ok;
     }
 
@@ -227,7 +227,7 @@ public:
     Return:
         true if is OK
     */
-    inline bool is_tip_sensor_zero() {
+    bool is_tip_sensor_zero() {
         return _tip_sensor_zero;
     }
 
@@ -304,8 +304,12 @@ public:
         }
         return _measure_state;
     }
-};
 
-extern Adc adc;
+    static Adc &get_instance() {
+        static Adc instance;
+        return instance;
+    }
+
+};
 
 }

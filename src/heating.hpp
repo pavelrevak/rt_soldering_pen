@@ -10,13 +10,13 @@
 */
 class Heating {
 
-    static const int PERIOD_TIME_MS = 150;  // ms
+    static const int PERIOD_TIME_MS = 125;  // ms
     static const int STANDBY_TIME_MS = 30000;  // s
     static const int PID_K_PROPORTIONAL = 450;
     static const int PID_K_INTEGRAL = 1000;
-    static const int PID_K_DERIVATE = 80;
+    static const int PID_K_DERIVATE = 50;
     static const int HEATING_POWER_MAX = 40 * 1000;  // mW
-    static const int IDLE_MIN_TIME_MS = 8;  // ms
+    static const int IDLE_MIN_TIME_MS = 3;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
     static const int TIP_MAX_CURRENT_MA = 9000;  // mA
@@ -113,7 +113,7 @@ private:
         _heater_current_ma = 0;
         _power_mw = 0;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
-            board::adc.measure_idle_start();
+            board::Adc::get_instance().measure_idle_start();
             _requested_power_mw = 0;
             _requested_power_uw_period_ticks = 0;
             _steady_ticks = 0;
@@ -134,23 +134,23 @@ private:
             _steady_ticks = 0;
         }
         // enable heater (PWM ON)
-        board::heater.on();
+        board::Heater::get_instance().on();
         // measure start
-        board::adc.measure_heat_start();
+        board::Adc::get_instance().measure_heat_start();
         _heating_element_status = HeatingElementStatus::UNKNOWN;
         _tip_sensor_status = TipSensorStatus::UNKNOWN;
         _state = State::HEATING;
     }
 
     int _get_compensated_heater_current() {
-        int current = board::adc.get_heater_current_ma();
+        int current = board::Adc::get_instance().get_heater_current_ma();
         current -= _heater_current_ma_error;
         return current;
     }
 
     void _cumulate_heating_measured_values() {
-        _cpu_voltage_mv_heat += board::adc.get_cpu_voltage_mv();
-        _supply_voltage_mv_heat += board::adc.get_supply_voltage_mv();
+        _cpu_voltage_mv_heat += board::Adc::get_instance().get_cpu_voltage_mv();
+        _supply_voltage_mv_heat += board::Adc::get_instance().get_supply_voltage_mv();
         _heater_current_ma += _get_compensated_heater_current();
         _measurements_count++;
     }
@@ -220,14 +220,14 @@ private:
 
     void _state_heating(const unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
-        if (board::adc.process() != board::Adc::State::DONE) return;
+        if (board::Adc::get_instance().process() != board::Adc::State::DONE) return;
         _cumulate_heating_measured_values();
         if (!_check_heating_limits()) {
             // continue heating
-            board::adc.measure_heat_start();
+            board::Adc::get_instance().measure_heat_start();
         } else {
             // disable heater (PWM OFF)
-            board::heater.off();
+            board::Heater::get_instance().off();
             _average_heating_measured_values();
             _calculate_total_energy();
             _calculate_tip_resistance();
@@ -240,7 +240,7 @@ private:
     void _state_stabilize(const unsigned delta_ticks) {
         _measure_ticks += delta_ticks;
         if (_measure_ticks < _ms2ticks(STABILIZE_TIME_MS)) return;
-        board::adc.measure_idle_start();
+        board::Adc::get_instance().measure_idle_start();
         _measure_ticks = 0;
         _measurements_count = 0;
         _cpu_voltage_mv_idle = 0;
@@ -252,11 +252,11 @@ private:
     }
 
     void _cumulate_idle_measured_values() {
-        _cpu_voltage_mv_idle += board::adc.get_cpu_voltage_mv();
-        _supply_voltage_mv_idle += board::adc.get_supply_voltage_mv();
-        _heater_current_ma_error += board::adc.get_heater_current_ma();
-        _cpu_temperature_mc += board::adc.get_cpu_temperature_mc();
-        _tip_temperature_mc += board::adc.get_tip_temperature_mc();
+        _cpu_voltage_mv_idle += board::Adc::get_instance().get_cpu_voltage_mv();
+        _supply_voltage_mv_idle += board::Adc::get_instance().get_supply_voltage_mv();
+        _heater_current_ma_error += board::Adc::get_instance().get_heater_current_ma();
+        _cpu_temperature_mc += board::Adc::get_instance().get_cpu_temperature_mc();
+        _tip_temperature_mc += board::Adc::get_instance().get_tip_temperature_mc();
         _measurements_count++;
     }
 
@@ -269,7 +269,7 @@ private:
     }
 
     void _check_tip_sensor() {
-        if (board::adc.is_tip_sensor_ok()) {
+        if (board::Adc::get_instance().is_tip_sensor_ok()) {
             if (get_real_tip_temperature_mc() < OVERHEAT_TEMPERATURE_MC) {
                 _tip_sensor_status = TipSensorStatus::OK;
             } else {
@@ -282,11 +282,11 @@ private:
     }
 
     void _state_idle() {
-        if (board::adc.process() != board::Adc::State::DONE) return;
+        if (board::Adc::get_instance().process() != board::Adc::State::DONE) return;
         _cumulate_idle_measured_values();
         if (_period_ticks < _required_period_ticks) {
             // continue in idle
-            board::adc.measure_idle_start();
+            board::Adc::get_instance().measure_idle_start();
         } else {
             _average_idle_measured_values();
             _check_tip_sensor();

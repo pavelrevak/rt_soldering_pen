@@ -58,8 +58,12 @@ public:
     inline void handler() {
         tick_counter++;
     }
-};
 
-extern Systick systick;
+    static Systick &get_instance() {
+        static Systick instance;
+        return instance;
+    }
+
+};
 
 }

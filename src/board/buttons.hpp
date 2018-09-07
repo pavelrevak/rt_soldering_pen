@@ -16,16 +16,19 @@ public:
         dw.configure_input().configure_pull(gpio::Pull::PULL_UP);
     }
 
-    inline bool is_pressed_up() {
+    bool is_pressed_up() {
         return !up.get_input();
     }
 
-    inline bool is_pressed_dw() {
+    bool is_pressed_dw() {
         return !dw.get_input();
     }
 
-};
+    static Buttons &get_instance() {
+        static Buttons instance;
+        return instance;
+    }
 
-extern Buttons buttons;
+};
 
 }

@@ -102,8 +102,12 @@ public:
     bool is_busy() {
         return busy;
     }
-};
 
-extern I2c i2c_driver;
+    static I2c &get_instance() {
+        static I2c instance;
+        return instance;
+    }
+
+};
 
 }

@@ -29,6 +29,8 @@ add_compile_options(
     $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>
     -fstrict-volatile-bitfields
     -ffunction-sections
+    -fno-threadsafe-statics
+
     -Werror
     -Wall
     -Wextra
@@ -39,6 +41,8 @@ add_compile_options(
     -Wshadow
     -Wlogical-op
     -Wsuggest-override
+    -Wsuggest-final-types
+    -Wsuggest-final-methods
     -pedantic
 )
 
@@ -63,12 +67,8 @@ add_executable(${PROJECT_NAME}
     src/lib/font
     src/lib/nv
     src/board/hardfault
-    src/board/clock
     src/board/systick
-    src/board/buttons
-    src/board/heater
     # src/board/debug
-    src/board/adc
     src/board/i2c
     src/board/display
     src/meta
