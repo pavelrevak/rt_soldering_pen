@@ -150,12 +150,16 @@ class Main : public Screen {
 
     void _draw_power_bargraph(int offset) {
         if (_preset.is_standby()) return;
+
         int power = _heating.get_power_mw();
-        int len = power * 32 / 40000;
+        int len = power * 15 / 40000;
+
         if (len == 0 && power > 0) len = 1;
-        if (len > 32) len = 32;
-        _fb.draw_vline(offset, 32 - len, len);
-        _fb.draw_vline(offset + 1, 32 - len, len);
+        if (len > 15) len = 15;
+
+        for (int i = 0; i < len; i++) {
+            _fb.draw_hline(offset, 31 - i * 2, 3);
+        }
     }
 
     void _draw_state(int offset) {
@@ -302,7 +306,7 @@ public:
                 _draw_state(48);
             } else {
                 _draw_tip_temperature_large(50);
-                _draw_power_bargraph(126);
+                _draw_power_bargraph(125);
             }
         }
     }

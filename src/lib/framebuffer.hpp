@@ -47,7 +47,7 @@ public:
         }
         y = 1 << y;
         while (len-- && x < WIDTH) {
-            fb[x++] |= y;
+            fb[x++] |= static_cast<FB_t>(y);
         }
     }
 
