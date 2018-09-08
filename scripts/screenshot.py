@@ -1,4 +1,10 @@
-"""Screen-shot generator for RT soldering pen"""
+"""Screen-shot generator for RT soldering pen
+
+dependencies:
+    python3
+    Pillow  (pip3 install Pillow)
+    pyswd  (https://github.com/cortexm/pyswd)
+"""
 
 import argparse
 import struct
