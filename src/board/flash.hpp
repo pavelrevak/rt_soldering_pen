@@ -29,7 +29,7 @@ public:
         flash_unlock();
         // erase block at address
         io::FLASH.CR.b.PER = true;
-        io::FLASH.AR = reinterpret_cast<const volatile uint32_t>(dst);
+        io::FLASH.AR = reinterpret_cast<uint32_t>(dst);
         io::FLASH.CR.b.STRT = true;
         // wait until page is erased
         while (io::FLASH.SR.b.BSY);

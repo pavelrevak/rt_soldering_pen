@@ -5,7 +5,7 @@
 
 namespace lib {
 
-template<int SIZE>
+template<size_t SIZE>
 class StringFile : public lib::OFile {
     char _buffer[SIZE] = {0};
     char *_ptr = _buffer;
@@ -40,7 +40,7 @@ public:
     }
 };
 
-template<int SIZE>
+template<size_t SIZE>
 class StringStream : public OStream {
     StringFile<SIZE> str_file;
 

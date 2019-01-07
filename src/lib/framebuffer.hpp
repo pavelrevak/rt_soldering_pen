@@ -6,13 +6,19 @@
 
 namespace lib {
 
-template <int WIDTH, int HEIGHT, typename FB_t>
+template <size_t BUFFER_WIDTH, size_t BUFFER_HEIGHT, typename FB_t>
 class FrameBuffer {
+
+    static_assert(BUFFER_HEIGHT <= sizeof(FB_t) * 8);
+
     union {
-        FB_t fb[WIDTH];
-        unsigned char buffer[WIDTH * sizeof(FB_t)];
+        FB_t fb[BUFFER_WIDTH];
+        unsigned char buffer[BUFFER_WIDTH * sizeof(FB_t)];
     };
+
 public:
+    static const int WIDTH = BUFFER_WIDTH;
+    static const int HEIGHT = BUFFER_HEIGHT;
 
     inline unsigned char *get_buffer() {
         return buffer;

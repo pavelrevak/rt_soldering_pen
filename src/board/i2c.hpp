@@ -55,8 +55,8 @@ public:
         data_len = len;
         r_dma.IFCR.clear_flags(DMA_CH_I2C_TX);
         r_dma_i2c_tx.CCR.r = 0x00000000;
-        r_dma_i2c_tx.CMAR.MAR = reinterpret_cast<const uint32_t>(data);
-        r_dma_i2c_tx.CPAR.PAR = reinterpret_cast<const uint32_t>(&r_i2c.TXDR.TXDATA);
+        r_dma_i2c_tx.CMAR.MAR = reinterpret_cast<uint32_t>(data);
+        r_dma_i2c_tx.CPAR.PAR = reinterpret_cast<uint32_t>(&r_i2c.TXDR.TXDATA);
         r_dma_i2c_tx.CNDTR.NDT = data_len;
         io::Dma::Channel::Ccr dma_i2c_tx_ccr(0x00000000);
         dma_i2c_tx_ccr.b.EN = true;
