@@ -1,4 +1,4 @@
 [submodule "io"]
     path = io
     url = https://github.com/cortexm/io
-    branch = v0.0.20180804
+    branch = v0.0.20190108
