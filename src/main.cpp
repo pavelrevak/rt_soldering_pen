@@ -1,6 +1,7 @@
 #include "board/clock.hpp"
 #include "board/systick.hpp"
 // #include "board/debug.hpp"
+#include "board/hwid.hpp"
 #include "board/adc.hpp"
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
@@ -30,6 +31,7 @@ class MainClass {
         board::Clock::get_instance().init_hw();
         board::Systick::get_instance().init_hw();
         // board::debug.init_hw();
+        board::HwId::get_instance().init_hw();
         board::Heater::get_instance().init_hw();
         board::Buttons::get_instance().init_hw();
         board::Adc::get_instance().init_hw();

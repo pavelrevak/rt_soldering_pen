@@ -5,13 +5,14 @@
 #include "io/reg/stm32/f0/adc.hpp"
 #include "io/reg/stm32/f0/dma.hpp"
 #include "io/reg/stm32/f0/sysmem.hpp"
+#include "board/hwid.hpp"
 #include "board/gpio.hpp"
 
 namespace board {
 
 class Adc {
 
-public:
+ public:
 
     enum class State {
         DONE,
@@ -19,11 +20,33 @@ public:
         MEASURE_HEAT,
     } _measure_state = State::DONE;
 
-private:
+ private:
+    struct HwConfiguration {
+        const int32_t TEMP_SENS_MV_AT_500_DG;
+        const int32_t SUPPLY_VOLTAGE_DIV_R1;
+        const int32_t SUPPLY_VOLTAGE_DIV_R2;
+        const int32_t CURRENT_SENS_MV_AT_1_AMP;
+    };
+
+    HwConfiguration _hw0x = {
+        3000,  // TEMP_SENS_MV_AT_500_DG
+        10,  // SUPPLY_VOLTAGE_DIV_R1
+        68,  // SUPPLY_VOLTAGE_DIV_R2
+        110,  // CURRENT_SENS_MV_AT_1_AMP
+    };
+
+    HwConfiguration _hw1x = {
+        1450,  // TEMP_SENS_MV_AT_500_DG
+        10,  // SUPPLY_VOLTAGE_DIV_R1
+        82,  // SUPPLY_VOLTAGE_DIV_R2
+        90,  // CURRENT_SENS_MV_AT_1_AMP
+    };
+
+    HwConfiguration *_conf = nullptr;
 
     static const unsigned DMA_CH_ADC = 1;
     static const uint16_t MAX_VALUE = 0xfff0;
-    static const int TIP_SENSOR_MAX_VALUE = 65000;
+    static const int TIP_SENSOR_MAX_VALUE = 60000;
     static const int TIP_SENSOR_ZERO_VALUE = 200;
 
     io::Adc &r_adc = io::ADC;
@@ -66,15 +89,15 @@ private:
         // Configure DMA for ADC
         r_dma.IFCR.clear_flags(DMA_CH_ADC);
         r_dma_adc.CCR.r = 0x00000000;
-        r_dma_adc.CMAR.MAR = reinterpret_cast<size_t>(&raw_measured);
-        r_dma_adc.CPAR.PAR = reinterpret_cast<size_t>(&r_adc.DR.DATA);
+        r_dma_adc.CMAR.MAR(&raw_measured);
+        r_dma_adc.CPAR.PAR(&r_adc.DR.DATA);
         r_dma_adc.CNDTR.NDT = count;
         io::Dma::Channel::Ccr dma_adc_ccr(0x00000000);
         dma_adc_ccr.b.EN = true;
         dma_adc_ccr.b.MINC = true;
-        dma_adc_ccr.b.PSIZE = io::Dma::Channel::Ccr::Size::SIZE_16;
-        dma_adc_ccr.b.MSIZE = io::Dma::Channel::Ccr::Size::SIZE_16;
-        dma_adc_ccr.b.PL = io::Dma::Channel::Ccr::Pl::LOW;
+        dma_adc_ccr.PSIZE(io::Dma::Channel::Ccr::Size::SIZE_16);
+        dma_adc_ccr.MSIZE(io::Dma::Channel::Ccr::Size::SIZE_16);
+        dma_adc_ccr.PL(io::Dma::Channel::Ccr::Pl::LOW);
         r_dma_adc.CCR.r = dma_adc_ccr.r;
         // start ADC
         r_adc.CR.b.ADSTART = true;
@@ -101,8 +124,8 @@ private:
         int tmp = raw_supply_voltage;
         tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
-        tmp *= 68 + 10;  // divider with 68 and 10 kOhm
-        tmp /= 10;
+        tmp *= _conf->SUPPLY_VOLTAGE_DIV_R2 + _conf->SUPPLY_VOLTAGE_DIV_R1;
+        tmp /= _conf->SUPPLY_VOLTAGE_DIV_R1;
         _actual_supply_voltage_mv = tmp;
     }
 
@@ -117,7 +140,7 @@ private:
         tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 500 * 1000;  // 500 degrees at 3V
-        tmp /= 3000;
+        tmp /= _conf->TEMP_SENS_MV_AT_500_DG;
         _actual_tip_temperature_mc = tmp;
     }
 
@@ -127,7 +150,7 @@ private:
         tmp *= _actual_cpu_voltage_mv;
         tmp /= MAX_VALUE;
         tmp *= 1000;  // mA
-        tmp /= 110;  // 110 mV / A
+        tmp /= _conf->CURRENT_SENS_MV_AT_1_AMP;
         _actual_heater_current_ma = tmp;
     }
 
@@ -166,8 +189,7 @@ private:
         }
     }
 
-public:
-
+ public:
     /** Last measured CPU voltage
 
     Return:
@@ -235,6 +257,17 @@ public:
     */
     void init_hw() {
         // GPIO
+        switch (HwId::get_instance().get_hw_revision()) {
+        case HwId::HwRevision::UNKNOWN:
+            _conf = nullptr;
+            break;
+        case HwId::HwRevision::HW_0X:
+            _conf = &_hw0x;
+            break;
+        case HwId::HwRevision::HW_1X:
+            _conf = &_hw1x;
+            break;
+        }
         heater_current_input.configure_analog();
         tip_temperature_input.configure_analog();
         supply_voltage_input.configure_analog();
@@ -309,7 +342,6 @@ public:
         static Adc instance;
         return instance;
     }
-
 };
 
-}
+}  // namespace board
