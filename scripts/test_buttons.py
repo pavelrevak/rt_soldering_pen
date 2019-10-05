@@ -1,13 +1,16 @@
-"""Script for testing buttons on real HW without LCD using SWD programmer: ST-Link"""
+"""Script for testing buttons on real HW
+without LCD using SWD programmer: ST-Link"""
 
 import time
 import swd
+
 
 def main():
     """Main func"""
     dev = swd.Swd()
     button_up_last = None
     button_dw_last = None
+    exit_time = 0
     while True:
         try:
             gpiob_inputs = dev.get_mem32(0x48000410)
@@ -18,9 +21,17 @@ def main():
                 button_dw_last = button_dw
                 print("up: %d  dw: %d" % (button_up, button_dw))
             time.sleep(.1)
+            if button_up and button_dw:
+                exit_time += 1
+                if exit_time > 10:
+                    print("done")
+                    break
+            else:
+                exit_time = 0
         except KeyboardInterrupt:
-            print()
+            print("exit")
             break
+
 
 if __name__ == "__main__":
     main()
