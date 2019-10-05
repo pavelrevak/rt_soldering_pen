@@ -279,7 +279,7 @@ public:
                 _preset.set_standby();
                 break;
             case lib::Button::Action::PRESSED_LONG:
-                change_screen(ScreenId::INFO);
+                change_screen(ScreenId::MENU);
                 return true;
             default:
                 break;
