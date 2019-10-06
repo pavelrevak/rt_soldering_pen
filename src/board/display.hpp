@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include "board/gpio.hpp"
+#include "board/hwid.hpp"
 #include "board/i2c.hpp"
 #include "board/ssd1306.hpp"
 #include "lib/framebuffer.hpp"
@@ -43,8 +44,13 @@ public:
     Display(board::I2c &i2c) : _i2c(i2c) {}
 
     void init_hw() {
-        _oled_nrst.clr();
-        _oled_nrst.configure_output().configure_otype(gpio::Otype::PUSH_PULL).configure_ospeed(gpio::Ospeed::LOW).clr();
+        if (HwId::get_instance().get_hw_revision() == HwId::HwRevision::HW_0X) {
+            _oled_nrst.clr();
+            _oled_nrst.configure_output();
+            _oled_nrst.configure_otype(gpio::Otype::PUSH_PULL);
+            _oled_nrst.configure_ospeed(gpio::Ospeed::LOW);
+            _oled_nrst.clr();
+        }
     }
 
     void redraw() {
@@ -54,9 +60,21 @@ public:
 
     void init() {
         fb_cmds.fb.clear();
-        _oled_nrst.set();
+        if (HwId::get_instance().get_hw_revision() == HwId::HwRevision::HW_0X) {
+            _oled_nrst.set();
+        }
         _i2c.write(0x3c, init_cmds, sizeof(init_cmds));
         redraw();
+    }
+
+    void brightness(uint8_t brightness) {
+        uint8_t rotate_cmds[3] {
+            Ssd1306::CO_CMD,
+            Ssd1306::SETCONTRAST,
+            brightness,
+        };
+        while (_i2c.is_busy());
+        _i2c.write(0x3c, rotate_cmds, sizeof(rotate_cmds));
     }
 
     void rotate(bool x, bool y) {

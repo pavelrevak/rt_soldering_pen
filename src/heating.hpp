@@ -2,6 +2,7 @@
 
 #include "board/clock.hpp"
 #include "board/heater.hpp"
+#include "board/hwid.hpp"
 #include "board/adc.hpp"
 #include "lib/pid.hpp"
 #include "preset.hpp"
@@ -9,7 +10,7 @@
 /** Class for controlling heating and measuring cycle
 */
 class Heating {
-
+ public:
     static const int PERIOD_TIME_MS = 125;  // ms
     static const int STANDBY_TIME_MS = 30000;  // s
     static const int PID_K_PROPORTIONAL = 450;
@@ -20,14 +21,13 @@ class Heating {
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
     static const int TIP_MAX_CURRENT_MA = 9000;  // mA
-    static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300; // mV
+    static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300;  // mV
     static const int TIP_RESISTANCE_SHORTED = 500;  // mOhm
     static const int TIP_RESISTANCE_MIN = 1500;  // mOhm
     static const int TIP_RESISTANCE_MAX = 2500;  // mOhm
     static const int TIP_RESISTANCE_BROKEN = 100000;  // mOhm
-    static const int OVERHEAT_TEMPERATURE_MC = 500 * 1000;  // degree Celsius
-
-public:
+    static const int OVERHEAT_TEMPERATURE_MC_HW0X = 500 * 1000;  // 1/1000 degree Celsius
+    static const int OVERHEAT_TEMPERATURE_MC = 600 * 1000;  // 1/1000 degree Celsius
 
     enum class State {
         STOP,
@@ -54,8 +54,7 @@ public:
         SHORTED,
     } _tip_sensor_status = TipSensorStatus::UNKNOWN;
 
-private:
-
+ private:
     Settings &_settings;
     Preset _preset;
     lib::Pid _pid;
@@ -270,7 +269,11 @@ private:
 
     void _check_tip_sensor() {
         if (board::Adc::get_instance().is_tip_sensor_ok()) {
-            if (get_real_tip_temperature_mc() < OVERHEAT_TEMPERATURE_MC) {
+            int overheat_temperature_mc = OVERHEAT_TEMPERATURE_MC;
+            if (board::HwId::get_instance().get_hw_revision() == board::HwId::HwRevision::HW_0X) {
+                overheat_temperature_mc = OVERHEAT_TEMPERATURE_MC_HW0X;
+            }
+            if (get_real_tip_temperature_mc() < overheat_temperature_mc) {
                 _tip_sensor_status = TipSensorStatus::OK;
             } else {
                 _tip_sensor_status = TipSensorStatus::OVERHEAT;
@@ -295,8 +298,7 @@ private:
         }
     }
 
-public:
-
+ public:
     Heating(Settings &settings) :
     _settings(settings),
     _preset(settings) {}
@@ -522,5 +524,4 @@ public:
         }
         return _state;
     }
-
 };

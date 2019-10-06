@@ -6,28 +6,35 @@
 - Supply voltage: 5 - 18V (recommended: 7 - 16V)
 - Supply current: pulse peaks to 6A @12V (average resistance of RT heating elements is 2 Ohm, so current depends on supply voltage)
 - Supply current in idle: max 15mA
-- Regulation: PSD (PID) regulator with PWM power transfer (150ms period)
-- Set-point temperature: 50°C - 400°C
-- Maximum measurable tip temperature: 530°C + ambient temperature
+- Regulation: PSD (PID) regulator with PWM power transfer (125ms period)
+- Set-point temperature: 50°C - 400°C (500°C with HW v1.0)
+- Maximum measurable tip temperature: 530°C + ambient temperature (999°C with HW v1.0)
 - Maximum heating power: is limited by SW to 40W or by supply voltage: 40W @11V, 20W @8V
 - Heating speed: 30°C -> 300°C: about 4s with RT-2 pen and 40W limit
-- Temperature accuracy: about +/-5°C (calibration is planed)
-- Other features: Celsius / Fahrenheit, right / left handed mode, normal / advanced mode display
+- Temperature accuracy: about +/-5°C
+- Other features:
+  - Celsius / Fahrenheit
+  - right / left handed mode
+  - normal / advanced mode display
+  - High brightness mode
+  - Auto turn off display to prevent OLED burning
 - FW updating: by any SWD programmer (ST-Link) [actual firmware](https://github.com/pavelrevak/rt_soldering_pen/releases), firmware is still under active development.
 
 ## Powering
 
-- supply pins are marked with GND or BLACK wire as negative pole and +12V or RED wire as positive pole.
+- supply pins are marked with GND, - or BLACK wire as negative pole and +12V, + or RED wire as positive pole.
 
 ### WARNING
 
-**Be careful with connecting supply and always check it before turning ON!**
+- **Be careful with connecting supply and always check polarity before turning ON!**
 
-Although controller is protected for reverse voltage by diode, power part is not protected. **If is connected RT tip, with reversed voltage then will heat on maximum power and also MOSFET transistor will overheat.**
+- Although MCU is protected for reverse voltage by diode, power part is not protected. **If is connected RT tip, with reversed voltage then will heat on maximum power and also MOSFET transistor will overheat.** (this is for HW v0.3)
 
-Also similar problem can happened **if RT tip is not fully inserted and then someone turn ON heating.** Protection for this will be fixed by SW in next release.
+- HW v1.0 has full reverse voltage protection with FET diode
 
-Do not solder something under voltage if is powered from same supply, because RT tip is connected with GND. (for example inside car when pen is powered from lighter connector, or some AC power supplies where is negative pole connected to ground conductor).
+- Also similar problem can happened **if RT tip is not fully inserted and then someone turn ON heating.** Protection for this will be fixed by SW in next releases.
+
+- **Do not solder something under voltage if is powered from same supply, because RT tip is connected with GND. (for example inside car when pen is powered from lighter connector, or some AC power supplies where is negative pole connected to ground conductor).**
 
 ### Supply from AC power supply
 
@@ -35,13 +42,19 @@ Switching power supplies must be able to withstand high current pulses (12V/6A).
 
 Or you can use Transformer with good capacity and these supplies don't have connected minus pole to ground conductor.
 
+### USB-C USB-PD
+
+For that exists ZYPDS and similar modules - it is a converter from USB-PD to selected output voltage and current. But this is not tested and it should have some problems, because all the supply voltage is switched with PWM to 2 ohm load (inside RT tip) so: for 12V it is almost 6 Amps and in normal USB-PD is maximum rating 5A but only at 20V.
+
 ### Supply from battery
 
 Best batteries for supply RT soldering pen are hobbyist LIPO 3S, 4S or 2S (but not full output power) with capacity at least 1Ah (with continuous discharge current at least 5A).
 
 From my practice 2.2Ah 3S LIPO battery can last for about 5 to 10 hours of soldering.
 
-Also is possible to use small 3S LIPO battery about 0.5Ah / 20C and this battery will be continuously charged with small charger (about 0.5A charging current) - this battery will work as capacitor with very high capacity. and also is possible to work for some time without AC supply.
+### Hybrid power supply battery/USB(AC)
+
+Also is possible to use small 3S LIPO battery about 0.5Ah / 20C and this battery will be continuously charged with small charger - steup-up from USB 5V (about 0.5A charging current) - this battery will work as capacitor with very high capacity. For that is enough also standard and cheap USB. and also is possible to work for some time without USB supply.
 
 ## Buttons
 
@@ -134,6 +147,7 @@ This screen show simple menu with:
 
 - version information
 - basic settings:
+  - High Brightness
   - Advanced mode
   - Fahrenheit
   - Left handed

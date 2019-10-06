@@ -37,9 +37,18 @@ make
 
 ### Flashing
 
-Connect programmer:
+Connect ST-Link or other SWD programmer:
+
+#### HW v0.3
+
 - G : GND
 - C : SWCLK
+- D : SWDIO
+
+#### HW v1.0
+
+- C : SWCLK
+- G : GND
 - D : SWDIO
 
 If you have installed [pystlink](https://github.com/pavelrevak/pystlink) and is in search path just type:

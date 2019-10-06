@@ -35,6 +35,7 @@ class Menu : public Screen {
 
     enum MenuItems {
         ITEM_ABOUT,
+        ITEM_BRIGHTNESS,
         ITEM_ADVANCED_MODE,
         ITEM_FAHRENHEIT,
         ITEM_LEFT_HANDED,
@@ -59,6 +60,13 @@ class Menu : public Screen {
             0,
             MenuItem::ItemType::TEXT,
             false,
+        }, {
+            "High brightness:",
+            nullptr,
+            0,
+            0,
+            MenuItem::ItemType::VALUE_BINARY,
+            true,
         }, {
             "Advanced mode:",
             nullptr,
@@ -194,6 +202,7 @@ class Menu : public Screen {
     }
 
     void _update_values() {
+        _menu_items[ITEM_BRIGHTNESS].value = _settings.get_brightness();
         _menu_items[ITEM_ADVANCED_MODE].value = _settings.get_advanced_mode();
         _menu_items[ITEM_FAHRENHEIT].value = _settings.get_fahrenheit();
         _menu_items[ITEM_LEFT_HANDED].value = _settings.get_left_handed();
@@ -208,6 +217,9 @@ class Menu : public Screen {
 
     void button_long_menu_item() {
         switch (_cursor_position) {
+        case ITEM_BRIGHTNESS:
+            _settings.toggle_brightness();
+            break;
         case ITEM_ADVANCED_MODE:
             _settings.toggle_advanced_mode();
             break;
