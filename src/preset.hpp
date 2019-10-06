@@ -1,17 +1,18 @@
 #pragma once
 
 #include "lib/minmax.hpp"
+#include "board/hwid.hpp"
 #include "settings.hpp"
 
 class Preset {
-
     static const int PRESETS = 2;
     static const int NO_EDIT = -1;
 
     // temperatures are in 1/1000 degree C
 
     static const int PRESET_TEMPERATURE_MIN = 50 * 1000;
-    static const int PRESET_TEMPERATURE_MAX = 400 * 1000;
+    static const int PRESET_TEMPERATURE_MAX_HW0X = 400 * 1000;
+    static const int PRESET_TEMPERATURE_MAX = 500 * 1000;
 
     int _selected = 0;
     int _edited = NO_EDIT;
@@ -19,7 +20,7 @@ class Preset {
 
     Settings &_settings;
 
-public:
+ public:
     Preset(Settings &settings) :
     _settings(settings) {}
 
@@ -134,10 +135,13 @@ public:
     */
     void edit_add(int val) {
         if (_edited == NO_EDIT) return;
+        int max_temp = PRESET_TEMPERATURE_MAX;
+        if (board::HwId::get_instance().get_hw_revision() == board::HwId::HwRevision::HW_0X) {
+            max_temp = PRESET_TEMPERATURE_MAX_HW0X;
+        }
         _settings.set_preset_temperature(_edited, lib::minmax(
             _settings.get_preset_temperature(_edited) + val,
             PRESET_TEMPERATURE_MIN,
-            PRESET_TEMPERATURE_MAX));
+            max_temp));
     }
-
 };
