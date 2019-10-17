@@ -12,20 +12,21 @@
 class Heating {
  public:
     static const int PERIOD_TIME_MS = 125;  // ms
-    static const int STANDBY_TIME_MS = 30000;  // s
+    static const int STANDBY_TIME_MS = 30000;  // ms
     static const int PID_K_PROPORTIONAL = 450;
     static const int PID_K_INTEGRAL = 1000;
     static const int PID_K_DERIVATE = 50;
-    static const int HEATING_POWER_MAX = 40 * 1000;  // mW
+    static const int HEATING_POWER_MAX_MW = 40 * 1000;  // mW
     static const int IDLE_MIN_TIME_MS = 3;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
     static const int TIP_MAX_CURRENT_MA = 9000;  // mA
     static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300;  // mV
-    static const int TIP_RESISTANCE_SHORTED = 500;  // mOhm
-    static const int TIP_RESISTANCE_MIN = 1500;  // mOhm
-    static const int TIP_RESISTANCE_MAX = 2500;  // mOhm
-    static const int TIP_RESISTANCE_BROKEN = 100000;  // mOhm
+    static const int SUPPLY_VOLTAGE_MAX_MV = 18000;  // mV
+    static const int TIP_RESISTANCE_SHORTED_MO = 500;  // mOhm
+    static const int TIP_RESISTANCE_MIN_MO = 1500;  // mOhm
+    static const int TIP_RESISTANCE_MAX_MO = 2500;  // mOhm
+    static const int TIP_RESISTANCE_BROKEN_MO = 100000;  // mOhm
     static const int OVERHEAT_TEMPERATURE_MC_HW0X = 500 * 1000;  // 1/1000 degree Celsius
     static const int OVERHEAT_TEMPERATURE_MC = 600 * 1000;  // 1/1000 degree Celsius
 
@@ -204,13 +205,13 @@ class Heating {
     }
 
     void _check_heating_element() {
-        if (_heater_resistance_mo < TIP_RESISTANCE_SHORTED) {
+        if (_heater_resistance_mo < TIP_RESISTANCE_SHORTED_MO) {
             _heating_element_status = HeatingElementStatus::SHORTED;
-        } else if (_heater_resistance_mo < TIP_RESISTANCE_MIN) {
+        } else if (_heater_resistance_mo < TIP_RESISTANCE_MIN_MO) {
             _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
-        } else if (_heater_resistance_mo > TIP_RESISTANCE_BROKEN) {
+        } else if (_heater_resistance_mo > TIP_RESISTANCE_BROKEN_MO) {
             _heating_element_status = HeatingElementStatus::BROKEN;
-        } else if (_heater_resistance_mo > TIP_RESISTANCE_MAX) {
+        } else if (_heater_resistance_mo > TIP_RESISTANCE_MAX_MO) {
             _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
         } else {
             _heating_element_status = HeatingElementStatus::OK;
@@ -464,7 +465,7 @@ class Heating {
     /** Initialize module
     */
     void init() {
-        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, HEATING_POWER_MAX);
+        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, HEATING_POWER_MAX_MW);
     }
 
     Preset &get_preset() {
