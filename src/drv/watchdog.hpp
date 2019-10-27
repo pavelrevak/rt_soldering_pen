@@ -2,17 +2,15 @@
 
 #include "io/reg/stm32/f0/iwdg.hpp"
 
-namespace board {
+namespace drv {
 
 class Watchdog {
-private:
     static const unsigned WATCHDOG_FREQUENCY = 40000;  // Hz
     // DIVIDER  min_time  max_time
     // DIV_4    0.1 ms    409.6 ms
     // DIV_256  6.4 ms    26.2144 s
 
-public:
-
+ public:
     static void enable(const unsigned time_ms, const unsigned window_time_ms) {
         unsigned prediv = io::Iwdg::Pr::Pre::DIV_4;
         unsigned reload = time_ms * WATCHDOG_FREQUENCY / 1000;
@@ -37,4 +35,4 @@ public:
     }
 };
 
-}
+}  // namespace drv

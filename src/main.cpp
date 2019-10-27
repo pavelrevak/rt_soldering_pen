@@ -1,4 +1,5 @@
 #include "io/reg/cortexm/nvic.hpp"
+#include "drv/watchdog.hpp"
 #include "board/clock.hpp"
 #include "board/systick.hpp"
 // #include "board/debug.hpp"
@@ -7,7 +8,6 @@
 #include "board/i2c.hpp"
 #include "board/buttons.hpp"
 #include "board/display.hpp"
-#include "board/watchdog.hpp"
 #include "heating.hpp"
 #include "display.hpp"
 #include "settings.hpp"
@@ -24,7 +24,7 @@ class MainClass {
         if (_heating.process(delta_ticks) == Heating::State::STOP) {
             _display.draw();
             _heating.start();
-            board::Watchdog::refresh();
+            drv::Watchdog::refresh();
         }
     }
 
@@ -38,7 +38,7 @@ class MainClass {
         board::Adc::get_instance().init_hw();
         board::I2c::get_instance().init_hw();
         board::display.init_hw();
-        board::Watchdog::enable(200, 100);  // time and window in ms
+        drv::Watchdog::enable(200, 100);  // time and window in ms
     }
 
 public:
