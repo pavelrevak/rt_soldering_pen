@@ -1,3 +1,4 @@
+#include "io/reg/cortexm/nvic.hpp"
 #include "board/clock.hpp"
 #include "board/systick.hpp"
 // #include "board/debug.hpp"
