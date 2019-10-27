@@ -1,7 +1,7 @@
 #pragma once
 
 #include <stdlib.h>
-#include "board/flash.hpp"
+#include "drv/flash.hpp"
 
 namespace lib {
 
@@ -33,13 +33,13 @@ class Nv {
         return raw;
     }
 
-    static const volatile uint16_t _nv[board::Flash::BLOCK_SIZE / sizeof(uint16_t)];
+    static const volatile uint16_t _nv[drv::Flash::BLOCK_SIZE / sizeof(uint16_t)];
     const volatile uint16_t *_last_data = nullptr;
 
     const volatile uint16_t *_find_key(const uint16_t key, const uint8_t size=0) const {
         const volatile uint16_t *header_last = nullptr;
         const volatile uint16_t *nv = _nv;
-        while (*nv != board::Flash::ERASED_DATA) {
+        while (*nv != drv::Flash::ERASED_DATA) {
             const Header &header = _to_head(nv);
             if ((header.key == key) && (header.size == size)) {
                 header_last = nv;
@@ -51,9 +51,9 @@ class Nv {
 
     void _add_data(const uint16_t key, const bool val, const uint16_t *data=nullptr, uint8_t size=0) {
         uint16_t header = _from_head(key, size, val);
-        board::Flash::flash_write16(_last_data++, header);
+        drv::Flash::flash_write16(_last_data++, header);
         while (size--) {
-            board::Flash::flash_write16(_last_data++, *data++);
+            drv::Flash::flash_write16(_last_data++, *data++);
         }
     }
 
@@ -61,7 +61,7 @@ public:
 
     Nv() {
         _last_data = _nv;
-        while (*_last_data != board::Flash::ERASED_DATA) {
+        while (*_last_data != drv::Flash::ERASED_DATA) {
             _last_data++;
         }
     }
@@ -91,7 +91,7 @@ public:
     }
 
     void erase() {
-        board::Flash::flash_erase_block(_nv);
+        drv::Flash::flash_erase_block(_nv);
         _last_data = _nv;
     }
 
@@ -100,7 +100,7 @@ public:
     }
 
     size_t free() const {
-        return (board::Flash::BLOCK_SIZE / sizeof(uint16_t)) - used();
+        return (drv::Flash::BLOCK_SIZE / sizeof(uint16_t)) - used();
     }
 
 };

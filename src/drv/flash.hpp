@@ -7,12 +7,10 @@ extern uint8_t _settings_end;
 
 extern unsigned __flash_block_size;
 
-namespace board {
+namespace drv {
 
 class Flash {
-
-public:
-
+ public:
     static const uint16_t ERASED_DATA = 0xffff;
     static const size_t BLOCK_SIZE = 1024;
 
@@ -56,4 +54,4 @@ public:
     }
 };
 
-}
+}  // namespace drv
