@@ -2,14 +2,19 @@
 
 ## Specs
 
-- Supported pens: all Weller RT tips with 3.5mm JACK.
-- Supply voltage: 5 - 18V (recommended: 7 - 16V)
+- Supported pens: all Weller RT (RT, RTM, RTP and RTU) tips with 3.5mm JACK
+- Operating voltage: 5 - 24V, recommended maximum:
+  - 13V for RT, RTM and RTP tips
+  - 24V for RTU tips
+- absolute maximum voltage: 25V
 - Supply current: pulse peaks to 6A @12V (average resistance of RT heating elements is 2 Ohm, so current depends on supply voltage)
 - Supply current in idle: max 15mA
 - Regulation: PSD (PID) regulator with PWM power transfer (125ms period)
-- Set-point temperature: 50°C - 400°C (500°C with HW v1.0)
-- Maximum measurable tip temperature: 530°C + ambient temperature (999°C with HW v1.0)
-- Maximum heating power: is limited by SW to 40W or by supply voltage: 40W @11V, 20W @8V
+- Set-point temperature: 50°C - 500°C (400°C with old HW v0.3)
+- Maximum measurable tip temperature: 999°C (530°C + ambient temperature with old HW v0.3)
+- Maximum heating power: is limited by SW to 40W or by supply voltage:
+  - 20W @7V, 40W @10V (with RT, RTM and RTP tips)
+  - 12W @7V, 40W @13V (with RTU tips)
 - Heating speed: 30°C -> 300°C: about 4s with RT-2 pen and 40W limit
 - Temperature accuracy: about +/-5°C
 - Other features:
@@ -26,15 +31,14 @@
 
 ### WARNING
 
-- **Be careful with connecting supply and always check polarity before turning ON!**
+- **Always check if RT tip is fully inserted before turning ON heating.** If is not fully inserted, then temperature measuring is not working and tip can be overheated. Protection for this will be created in future SW releases.
 
-- Although MCU is protected for reverse voltage by diode, power part is not protected. **If is connected RT tip, with reversed voltage then will heat on maximum power and also MOSFET transistor will overheat.** (this is for HW v0.3)
-
-- HW v1.0 has full reverse voltage protection with FET diode
-
-- Also similar problem can happened **if RT tip is not fully inserted and then someone turn ON heating.** Protection for this will be fixed by SW in next releases.
+- on old HW v0.3 **be careful with connecting supply and always check polarity before turning ON!**
+  - Although MCU is protected for reverse voltage by diode, power part is not protected. **If is connected RT tip, with reversed voltage then will heat on maximum power and also MOSFET transistor will overheat.** (this is for HW v0.3)
+  - HW v1.0 has full reverse voltage protection with FET diode
 
 - **Do not solder something under voltage if is powered from same supply, because RT tip is connected with GND. (for example inside car when pen is powered from lighter connector, or some AC power supplies where is negative pole connected to ground conductor).**
+  - **MS** (Military Specs) tips have isolated tip from ground.
 
 ### Supply from AC power supply
 
@@ -48,7 +52,7 @@ For that exists ZYPDS and similar modules - it is a converter from USB-PD to sel
 
 ### Supply from battery
 
-Best batteries for supply RT soldering pen are hobbyist LIPO 3S, 4S or 2S (but not full output power) with capacity at least 1Ah (with continuous discharge current at least 5A).
+Best batteries for supply RT soldering pen are hobbyist LIPO 3S or 2S (but not full output power) with capacity at least 1Ah (with continuous discharge current at least 5A).
 
 From my practice 2.2Ah 3S LIPO battery can last for about 5 to 10 hours of soldering.
 
