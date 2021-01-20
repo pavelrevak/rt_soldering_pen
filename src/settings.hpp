@@ -18,6 +18,7 @@ class Settings {
         PRESET_TEMPERATURE1,
         PRESET_TEMPERATURE2,
         STANDBY_TIMEOUT,
+        HIGH_POWER,
     };
 
     lib::Nv nv;
@@ -28,8 +29,9 @@ class Settings {
     bool _fahrenheit;
     bool _left_handed;
     bool _brightness;
+    bool _high_power;
 
-    static const size_t MIN_FREE = 7;
+    static const size_t MIN_FREE = 8;
 
 public:
 
@@ -41,6 +43,7 @@ public:
         _preset_temperatures[0] = nv.load_u16(PRESET_TEMPERATURE1, Default::PRESET_TEMPERATURE1);
         _preset_temperatures[1] = nv.load_u16(PRESET_TEMPERATURE2, Default::PRESET_TEMPERATURE2);
         _standby_timeout = nv.load_u16(STANDBY_TIMEOUT, Default::STANDBY_TIMEOUT);
+        _high_power = nv.load_bool(HIGH_POWER, false);
     }
 
     void save() {
@@ -51,6 +54,7 @@ public:
         nv.save_bool(BRIGHTNESS, _brightness);
         nv.save_u16(PRESET_TEMPERATURE1, _preset_temperatures[0]);
         nv.save_u16(PRESET_TEMPERATURE2, _preset_temperatures[1]);
+        nv.save_bool(HIGH_POWER, _high_power);
     }
 
 
@@ -90,6 +94,19 @@ public:
 
     void set_left_handed(const bool val=true) {
         _left_handed = val;
+    }
+    
+    
+    bool get_high_power() const {
+        return _high_power;
+    }
+    
+    void toggle_high_power() {
+        _high_power = != _high_power;
+    }
+    
+    void set_high_power() const {
+        _high_power = val;
     }
 
     static const uint8_t BRIGHTNESS_LOW = 40;
