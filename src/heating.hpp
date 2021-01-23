@@ -510,16 +510,10 @@ class Heating {
 //        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, _max_power_mw);
         if (_tip_type == TipType::RTU) {
             _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, RTU_HEATING_POWER_MAX_MW);
-            if (!_settings.get_high_power()) {
-                _settings.toggle_high_power();
-                _settings.save();
             }
         }
         else {
             _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, RTM_HEATING_POWER_MAX_MW);
-            if (_settings.get_high_power()) {
-                _settings.toggle_high_power();
-                _settings.save();
             }
         }
         if (_preset.is_standby() || getTipSensorStatus() != Heating::TipSensorStatus::OK) {
