@@ -152,9 +152,9 @@ class Main : public Screen {
         if (_preset.is_standby()) return;
 
         int power = _heating.get_power_mw();
-        int len = power * 15 / 40000;  // default for 40W power limit
+        int len = power * 15 / 40000;  // default for 40W tips
         
-        /* account for 150W power limit of RTU tips */
+        // account for 150W tips
         if (_heating.getTipType() == Heating::TipType::RTU) {
             len = power * 15 / 150000;
         }
