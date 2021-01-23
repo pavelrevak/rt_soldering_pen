@@ -39,6 +39,7 @@ class Menu : public Screen {
         ITEM_ADVANCED_MODE,
         ITEM_FAHRENHEIT,
         ITEM_LEFT_HANDED,
+        ITEM_HIGH_POWER,
         ITEM_TOTAL_ENERGY,
         ITEM_HEATER_POWER,
         ITEM_HEATER_CURRENT,
@@ -84,6 +85,13 @@ class Menu : public Screen {
         }, {
             "Left handed:",
             nullptr,
+            0,
+            0,
+            MenuItem::ItemType::VALUE_BINARY,
+            true,
+        }, {
+            "High power:";
+            mullptr,
             0,
             0,
             MenuItem::ItemType::VALUE_BINARY,
