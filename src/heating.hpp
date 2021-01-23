@@ -232,8 +232,7 @@ class Heating {
             _tip_type = TipType::RTU;
         } else if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MIN_MO && _heater_resistance_mo < RTM_TIP_RESISTANCE_MAX_MO){
             _tip_type = TipType::RTM;
-        }
-        else {
+        } else {
             _tip_type = TipType::UNKNOWN;
         }
     }
