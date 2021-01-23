@@ -155,7 +155,7 @@ class Main : public Screen {
         int len = power * 15 / 40000;  // default for 40W power limit
         
         /* account for 150W power limit of RTU tips */
-        if (_heating.getTipType() == Heating::TipType::TRU) {
+        if (_heating.getTipType() == Heating::TipType::RTU) {
             len = power * 15 / 150000;
         }
 
