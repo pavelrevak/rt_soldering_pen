@@ -122,6 +122,7 @@ class Heating {
         _supply_voltage_mv_heat = 0;
         _heater_current_ma = 0;
         _power_mw = 0;
+        _tip_type = TipType::UNKNOWN;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             board::Adc::get_instance().measure_idle_start();
             _requested_power_mw = 0;
