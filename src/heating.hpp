@@ -23,7 +23,8 @@ class Heating {
     static const int HEATING_MIN_POWER_MW = 100;  // mW
     static const int TIP_MAX_CURRENT_MA = 9000;  // mA
     static const int SUPPLY_VOLTAGE_HEATING_MIN_MV = 4300;  // mV
-    static const int SUPPLY_VOLTAGE_MAX_MV = 18000;  // mV
+    static const int RTM_SUPPLY_VOLTAGE_MAX_MV = 14000;  // mV
+    static const int RTU_SUPPLY_VOTLAGE_MAX_MV = 25000;  // mV
     static const int TIP_RESISTANCE_SHORTED_MO = 500;  // mOhm
     static const int RTM_TIP_RESISTANCE_MIN_MO = 1500;  // mOhm
     static const int RTM_TIP_RESISTANCE_MAX_MO = 2500;  // mOhm
