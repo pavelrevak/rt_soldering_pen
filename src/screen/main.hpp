@@ -158,7 +158,7 @@ class Main : public Screen {
         if (_heating.getTipType() == Heating::TipType::RTU) {
             len = power * 15 / 150000;
         }
-        
+
         if (len == 0 && power > 0) len = 1;
         if (len > 15) len = 15;
 
