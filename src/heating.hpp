@@ -17,7 +17,7 @@ class Heating {
     static const int PID_K_INTEGRAL = 1000;
     static const int PID_K_DERIVATE = 50;
     static const int RTM_HEATING_POWER_MAX_MW = 40 * 1000;  // mW
-    static const int RTU_HEATING_POWER_MAX_MW = 150 * 100;  // mW
+    static const int RTU_HEATING_POWER_MAX_MW = 150 * 100;  // mW (I know this is only 15W, I am leaving it like this for safety until I confirm code works, then I will change it to 150W)
     static const int IDLE_MIN_TIME_MS = 3;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
