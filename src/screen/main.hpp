@@ -186,6 +186,8 @@ class Main : public Screen {
                 _fb.draw_text(offset + 35, 0, "NO RT TIP", lib::Font::sans8);
             } else if (_heating.getTipSensorStatus() == Heating::TipSensorStatus::OVERHEAT) {
                 _fb.draw_text(offset + 35, 0, "OVERHEAT!", lib::Font::sans8);
+            } else if ((_heating.getTipType() == Heating::TipType::RTM && _heating.get_supply_voltage_mv_idle() > _heating.RTM_SUPPLY_VOLTAGE_MAX_MV) || (_heating.getTipType() == Heating::TipType::RTU && _heating.get_supply_voltage_mv_idle() > _heating.RTU_SUPPLY_VOLTAGE_MAX_MV)) {
+                _fb.draw_text(offset + 35, 0, "VOLTAGE TOO HIGH!", lib::Font::sans8);
             }
         } else if (_heating.get_steady_ms() > IDLE_MESSAGE_MS && status_blink < 4) {
             _fb.draw_text(offset + 35, 0, "IDLE", lib::Font::sans8);
