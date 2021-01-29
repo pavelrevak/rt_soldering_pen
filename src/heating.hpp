@@ -28,6 +28,7 @@ class Heating {
     static const int TIP_RESISTANCE_SHORTED_MO = 500;  // mOhm
     static const int RTM_TIP_RESISTANCE_MIN_MO = 1500;  // mOhm
     static const int RTM_TIP_RESISTANCE_MAX_MO = 2500;  // mOhm
+    static const int RTU_TIP_RESISTANCE_MIN_MO = 3000;  // mOhm
     static const int RTU_TIP_RESISTANCE_MAX_MO = 4000;  // mOhm
     static const int TIP_RESISTANCE_BROKEN_MO = 100000;  // mOhm
     static const int OVERHEAT_TEMPERATURE_MC_HW0X = 500 * 1000;  // 1/1000 degree Celsius
@@ -81,7 +82,6 @@ class Heating {
 
     int _requested_power_mw = 0;  // mW
     int _power_mw = 0;  // mW
-//    int _max_power_mw = 0;  // mW
     int _cpu_voltage_mv_heat = 0;  // mV
     int _cpu_voltage_mv_idle = 0;  // mV
     int _supply_voltage_mv_heat = 0;  // mV
@@ -220,6 +220,8 @@ class Heating {
             _heating_element_status = HeatingElementStatus::SHORTED;
         } else if (_heater_resistance_mo < RTM_TIP_RESISTANCE_MIN_MO) {
             _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
+        } else if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MAX_MO && _heater_resistance_mo < RTU_TIP_RESISTANCE_MIN_MO) {
+            _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
         } else if (_heater_resistance_mo > TIP_RESISTANCE_BROKEN_MO) {
             _heating_element_status = HeatingElementStatus::BROKEN;
         } else if (_heater_resistance_mo > RTU_TIP_RESISTANCE_MAX_MO) {
@@ -230,7 +232,7 @@ class Heating {
     }
     
     void _check_tip_type() {
-        if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MAX_MO && _heater_resistance_mo < RTU_TIP_RESISTANCE_MAX_MO) {
+        if (_heater_resistance_mo > RTU_TIP_RESISTANCE_MIN_MO && _heater_resistance_mo < RTU_TIP_RESISTANCE_MAX_MO) {
             _tip_type = TipType::RTU;
         } else if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MIN_MO && _heater_resistance_mo < RTM_TIP_RESISTANCE_MAX_MO){
             _tip_type = TipType::RTM;
@@ -507,8 +509,6 @@ class Heating {
     /** Start heating cycle
     */
     void start() {
-//        _max_power_mw = (40 + (110 * _settings.get_high_power())) * 100;  //mW
-//        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, _max_power_mw);
         if (_tip_type == TipType::RTU) {
             _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, RTU_HEATING_POWER_MAX_MW);
         } else {
