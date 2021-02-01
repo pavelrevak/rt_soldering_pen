@@ -16,7 +16,8 @@ class Heating {
     static const int PID_K_PROPORTIONAL = 450;
     static const int PID_K_INTEGRAL = 1000;
     static const int PID_K_DERIVATE = 50;
-    static const int HEATING_POWER_MAX_MW = 40 * 1000;  // mW
+    static const int RTM_HEATING_POWER_MAX_MW = 40 * 1000;  // mW
+    static const int RTU_HEATING_POWER_MAX_MW = 150 * 100;  // mW (I know this is only 15W, I am leaving it like this for safety until I confirm code works, then I will change it to 150W)
     static const int IDLE_MIN_TIME_MS = 3;  // ms
     static const int STABILIZE_TIME_MS = 2;  // ms
     static const int HEATING_MIN_POWER_MW = 100;  // mW
@@ -25,8 +26,10 @@ class Heating {
     static const int RTM_SUPPLY_VOLTAGE_MAX_MV = 14000;  // mV
     static const int RTU_SUPPLY_VOTLAGE_MAX_MV = 25000;  // mV
     static const int TIP_RESISTANCE_SHORTED_MO = 500;  // mOhm
-    static const int TIP_RESISTANCE_MIN_MO = 1500;  // mOhm
-    static const int TIP_RESISTANCE_MAX_MO = 2500;  // mOhm
+    static const int RTM_TIP_RESISTANCE_MIN_MO = 1500;  // mOhm
+    static const int RTM_TIP_RESISTANCE_MAX_MO = 2500;  // mOhm
+    static const int RTU_TIP_RESISTANCE_MIN_MO = 3000;  // mOhm
+    static const int RTU_TIP_RESISTANCE_MAX_MO = 4000;  // mOhm
     static const int TIP_RESISTANCE_BROKEN_MO = 100000;  // mOhm
     static const int OVERHEAT_TEMPERATURE_MC_HW0X = 500 * 1000;  // 1/1000 degree Celsius
     static const int OVERHEAT_TEMPERATURE_MC = 600 * 1000;  // 1/1000 degree Celsius
@@ -55,6 +58,12 @@ class Heating {
         BROKEN,
         SHORTED,
     } _tip_sensor_status = TipSensorStatus::UNKNOWN;
+    
+    enum class TipType {
+        UNKNOWN,
+        RTM,
+        RTU,
+    } _tip_type = TipType::UNKNOWN;
 
  private:
     Settings &_settings;
@@ -113,6 +122,7 @@ class Heating {
         _supply_voltage_mv_heat = 0;
         _heater_current_ma = 0;
         _power_mw = 0;
+        _tip_type = TipType::UNKNOWN;
         if (_requested_power_mw < HEATING_MIN_POWER_MW) {
             board::Adc::get_instance().measure_idle_start();
             _requested_power_mw = 0;
@@ -208,14 +218,26 @@ class Heating {
     void _check_heating_element() {
         if (_heater_resistance_mo < TIP_RESISTANCE_SHORTED_MO) {
             _heating_element_status = HeatingElementStatus::SHORTED;
-        } else if (_heater_resistance_mo < TIP_RESISTANCE_MIN_MO) {
+        } else if (_heater_resistance_mo < RTM_TIP_RESISTANCE_MIN_MO) {
+            _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
+        } else if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MAX_MO && _heater_resistance_mo < RTU_TIP_RESISTANCE_MIN_MO) {
             _heating_element_status = HeatingElementStatus::LOW_RESISTANCE;
         } else if (_heater_resistance_mo > TIP_RESISTANCE_BROKEN_MO) {
             _heating_element_status = HeatingElementStatus::BROKEN;
-        } else if (_heater_resistance_mo > TIP_RESISTANCE_MAX_MO) {
+        } else if (_heater_resistance_mo > RTU_TIP_RESISTANCE_MAX_MO) {
             _heating_element_status = HeatingElementStatus::HIGH_RESISTANCE;
         } else {
             _heating_element_status = HeatingElementStatus::OK;
+        }
+    }
+    
+    void _check_tip_type() {
+        if (_heater_resistance_mo > RTU_TIP_RESISTANCE_MIN_MO && _heater_resistance_mo < RTU_TIP_RESISTANCE_MAX_MO) {
+            _tip_type = TipType::RTU;
+        } else if (_heater_resistance_mo > RTM_TIP_RESISTANCE_MIN_MO && _heater_resistance_mo < RTM_TIP_RESISTANCE_MAX_MO){
+            _tip_type = TipType::RTM;
+        } else {
+            _tip_type = TipType::UNKNOWN;
         }
     }
 
@@ -232,6 +254,7 @@ class Heating {
             _average_heating_measured_values();
             _calculate_total_energy();
             _calculate_tip_resistance();
+            _check_tip_type();
             _calculate_voltage_drop();
             _check_heating_element();
             _state = State::STABILIZE;
@@ -462,11 +485,21 @@ class Heating {
     TipSensorStatus getTipSensorStatus() const {
         return _tip_sensor_status;
     }
+    
+    /** Getter tip type
+    indicate whether RTM or RTU tip is detected
+
+    Return:
+        state from enum TipType
+    */
+    TipType getTipType() const {
+        return _tip_type;
+    }
 
     /** Initialize module
     */
     void init() {
-        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, HEATING_POWER_MAX_MW);
+//        _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, HEATING_POWER_MAX_MW);
     }
 
     Preset &get_preset() {
@@ -476,6 +509,11 @@ class Heating {
     /** Start heating cycle
     */
     void start() {
+        if (_tip_type == TipType::RTU) {
+            _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, RTU_HEATING_POWER_MAX_MW);
+        } else {
+            _pid.set_constants(PID_K_PROPORTIONAL, PID_K_INTEGRAL, PID_K_DERIVATE, PERIOD_TIME_MS, RTM_HEATING_POWER_MAX_MW);
+        }
         if (_preset.is_standby() || getTipSensorStatus() != Heating::TipSensorStatus::OK) {
             _pid.reset();
             _requested_power_mw = 0;
